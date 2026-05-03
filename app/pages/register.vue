@@ -73,7 +73,7 @@ const accountId = computed<string>(
   () => `${username.value}@${config.public.authEmailDomain}`,
 );
 
-const confirmPasswordRules = computed<InputValidationRule[]>(() => [
+const confirmPasswordRules = computed<readonly InputValidationRule[]>(() => [
   {
     test: (c: string) => c === password.value,
     message: "Passwords must match",

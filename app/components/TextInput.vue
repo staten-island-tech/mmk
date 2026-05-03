@@ -30,7 +30,7 @@ import type { InputValidationRule } from "~/types/validation";
 
 const props = defineProps<{
   label: string;
-  rules?: InputValidationRule[];
+  rules?: readonly InputValidationRule[];
 }>();
 
 defineExpose({
@@ -41,7 +41,7 @@ defineExpose({
 const model = defineModel<string>();
 
 const touched = ref(false);
-const failedRules = computed<InputValidationRule[]>(() => {
+const failedRules = computed<readonly InputValidationRule[]>(() => {
   if (!touched.value) return [];
   return props.rules?.filter((rule) => !rule.test(model.value ?? "")) ?? [];
 });

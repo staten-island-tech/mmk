@@ -1,7 +1,7 @@
 /** Rule for validating a string against a condition. */
 export interface InputValidationRule {
   /** The test function to check the string against. */
-  test: (value: any) => boolean;
+  readonly test: (value: any) => boolean;
   /** The message to be displayed when the test fails. */
-  message: string;
+  readonly message: string;
 }
