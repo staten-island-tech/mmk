@@ -48,7 +48,7 @@ const password = ref<string>("");
  * Not a real email address. The domain is internal and no emails should ever be sent.
  */
 const accountId = computed<string>(
-  () => `${username}@${config.authEmailDomain}`,
+  () => `${username.value}@${config.public.authEmailDomain}`,
 );
 
 async function signIn() {
