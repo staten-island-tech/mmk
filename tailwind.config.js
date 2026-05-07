@@ -14,6 +14,13 @@ export default {
           "hover-foreground": colors.blue[200],
         },
         secondary: {
+          DEFAULT: "transparent",
+          border: colors.slate[400],
+          foreground: colors.slate[500],
+          hover: colors.slate[400],
+          "hover-foreground": colors.slate[200],
+        },
+        accent: {
           DEFAULT: colors.red[200],
           border: colors.red[500],
           foreground: colors.red[500],
