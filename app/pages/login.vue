@@ -1,4 +1,21 @@
 <template>
+  <Dialog
+    :open="dialogOpen"
+    :title="dialogTitle"
+    @close="dialogOpen = false"
+    :buttons="{
+      OK: {
+        priority: 1,
+        callback: () => (dialogOpen = false),
+      },
+      Cancel: {
+        priority: 0,
+        callback: () => (dialogOpen = false),
+      },
+    }"
+  >
+    {{ dialogMessage }}
+  </Dialog>
   <div class="flex justify-center items-center p-32 w-screen h-screen">
     <Card>
       <h2 class="text-xl font-medium text-slate-500">Log in to your account</h2>
@@ -40,6 +57,10 @@ definePageMeta({
   transitionGroup: "auth",
 });
 
+const dialogOpen = ref<boolean>(false);
+const dialogTitle = ref<string>("");
+const dialogMessage = ref<string>("");
+
 const username = ref<string>("");
 const password = ref<string>("");
 
@@ -57,7 +78,12 @@ async function signIn() {
     password: password.value,
   });
 
-  if (error) return alert(error);
+  if (error) {
+    dialogTitle.value = "Error Signing In";
+    dialogMessage.value = error.toString();
+    dialogOpen.value = true;
+    return;
+  }
 
   alert("Logged in successfully!");
   console.log(data);
