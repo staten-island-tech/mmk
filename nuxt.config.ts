@@ -28,4 +28,11 @@ export default defineNuxtConfig({
       authEmailDomain: "",
     },
   },
+  vite: {
+  vue: {
+    script: {
+      babelParserPlugins: []
+    }
+  }
+}
 });
