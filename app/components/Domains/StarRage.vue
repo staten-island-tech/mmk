@@ -44,36 +44,36 @@ function buildFS() {
 
     void main() {
 
-      // 🌌 FULL SCREEN SPACE (DO NOT SCALE THIS)
       vec2 uv = (gl_FragCoord.xy - 0.5 * r) / r.y;
      
       float time = t * 0.7;
       float dist = length(uv * 0.6);
 
-      vec4 finalColor = vec4(0.0);
-
+vec4 finalColor = vec4(0.0, 0.0, 0.0, 1.0);
       float angle = atan(uv.y, uv.x);
 
-      // 🌌 BACKGROUND (FULL SCREEN)
-      vec3 domain = vec3(0.08, 0.02, 0.22);
+vec3 domain = vec3(0.18, 0.05, 0.35);
 
-      float layer1 = sin(dist * 12.0 - time * 2.2 + angle * 5.0);
-      float layer2 = sin(dist * 20.0 + time * 3.5 - angle * 7.0);
-      float layer3 = sin(dist * 35.0 - time * 5.0 + angle * 3.0);
+float layer1 = sin(dist * 12.0 - time * 2.2 + angle * 5.0);
+float layer2 = sin(dist * 20.0 + time * 3.5 - angle * 7.0);
+float layer3 = sin(dist * 35.0 - time * 5.0 + angle * 3.0);
 
-      domain += vec3(0.45, 0.15, 0.85) * (layer1 * 0.5 + 0.5) * 0.8;
-      domain += vec3(0.7, 0.25, 1.0) * (layer2 * 0.5 + 0.5) * 0.6;
-      domain += vec3(0.4, 0.1, 0.7) * (layer3 * 0.5 + 0.5) * 0.4;
+domain += vec3(0.45, 0.15, 0.85) * (layer1 * 0.5 + 0.5) * 0.5;
+domain += vec3(0.7, 0.25, 1.0)  * (layer2 * 0.5 + 0.5) * 0.35;
+domain += vec3(0.4, 0.1, 0.7)   * (layer3 * 0.5 + 0.5) * 0.25;
+domain += vec3(0.6, 0.3, 1.0) * (0.35 + 0.25 * sin(uv.x * 4.0 + uv.y * 3.0 - time));
 
-domain += vec3(0.6, 0.3, 1.0) * (0.6 + 0.4 * sin(dist * 2.0 - time));
-      vec2 grid = fract(uv * 7.0 + time * 0.2);
-      float gridLines = (1.0 - smoothstep(0.0, 0.1, min(grid.x, grid.y))) * 0.35;
-      domain += vec3(0.5, 0.4, 0.9) * gridLines * (1.0 - dist * 0.3);
+vec2 grid = fract(uv * 7.0 + time * 0.2);
+float gridLines = (1.0 - smoothstep(0.0, 0.1, min(grid.x, grid.y))) * 0.35;
 
+
+
+// AFTER (uniform grid everywhere):
+domain += vec3(0.5, 0.4, 0.9) * gridLines;
       finalColor.rgb = domain;
 
       // ⚫ BLACK HOLE (SMALL CORE ONLY)
-      float radius = 0.35;
+      float radius = 0.38;
 
       vec2 bhUV = uv / radius;
       vec4 bh = getBlackHole(bhUV, time * 1.1);
@@ -83,9 +83,7 @@ domain += vec3(0.6, 0.3, 1.0) * (0.6 + 0.4 * sin(dist * 2.0 - time));
 
       finalColor = mix(finalColor, bh, mask);
 
-      // ✨ Rim glow
-      float rim = exp(-dist * 3.5);
-      finalColor.rgb += vec3(0.9, 0.4, 1.0) * rim * 0.6;
+      finalColor.rgb += vec3(0.9, 0.4, 1.0) * 0.15;
 
       gl_FragColor = clamp(finalColor * 1.15, 0.0, 1.0);
     }
