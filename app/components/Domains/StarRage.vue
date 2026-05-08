@@ -52,7 +52,7 @@ function buildFS() {
 vec4 finalColor = vec4(0.0, 0.0, 0.0, 1.0);
       float angle = atan(uv.y, uv.x);
 
-vec3 domain = vec3(0.18, 0.05, 0.35);
+vec3 domain = vec3(0.38, 0.05, 0.35);
 
 float layer1 = sin(dist * 12.0 - time * 2.2 + angle * 5.0);
 float layer2 = sin(dist * 20.0 + time * 3.5 - angle * 7.0);
@@ -83,7 +83,7 @@ domain += vec3(0.5, 0.4, 0.9) * gridLines;
 
       finalColor = mix(finalColor, bh, mask);
 
-      finalColor.rgb += vec3(0.9, 0.4, 1.0) * 0.15;
+      finalColor.rgb += vec3(0.9, 0.4, 1.0) * 0.25;
 
       gl_FragColor = clamp(finalColor * 1.15, 0.0, 1.0);
     }

@@ -21,13 +21,16 @@ const starActive = ref(false)
     <div class="absolute inset-0 z-0">
       <InfiniteVoid1 v-if="voidActive1" />
       <InfiniteVoid2 v-if="voidActive2" />
-      <MalevolentHos v-if="hosActive" />
+     
       <SpaceDefault v-if="spaceActive" />
       <StarRage v-if="starActive" />
     </div>
+    <div class ="absolute inset-0 z-20">
+       <MalevolentHos v-if="hosActive" />
+    </div>
 
     <!-- Controls (on top) -->
-    <div class="relative z-10 flex flex-col items-center py-8 gap-6">
+    <div class="relative z-20 flex flex-col items-center py-8 gap-6">
       <h1 class="text-4xl font-bold text-primary">
         Test Background
       </h1>
