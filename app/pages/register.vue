@@ -1,51 +1,63 @@
 <template>
-  <div class="flex justify-center items-center p-32 w-screen h-screen">
-    <Card>
-      <h2 class="text-xl font-medium text-slate-500">Create a new account</h2>
+  <div>
+    <Dialog
+      :open="dialogOpen"
+      :title="dialogTitle"
+      @close="dialogOpen = false"
+      :buttons="dialogButtons"
+    >
+      {{ dialogMessage }}
+    </Dialog>
 
-      <form class="flex flex-col gap-5" @submit.prevent="register">
-        <TextInput
-          label="Username"
-          :rules="usernameRules"
-          type="text"
-          placeholder="Enter username"
-          class="w-full"
-          ref="usernameInput"
-          v-model="username"
-        />
+    <div class="flex justify-center items-center p-32 w-screen h-screen">
+      <Card>
+        <h2 class="text-xl font-medium text-slate-500">Create a new account</h2>
 
-        <TextInput
-          label="Password"
-          :rules="passwordRules"
-          type="password"
-          placeholder="••••••••••••"
-          class="w-full"
-          ref="passwordInput"
-          v-model="password"
-        />
+        <form class="flex flex-col gap-5" @submit.prevent="register">
+          <TextInput
+            label="Username"
+            :rules="usernameRules"
+            type="text"
+            placeholder="Enter username"
+            class="w-full"
+            ref="usernameInput"
+            v-model="username"
+          />
 
-        <TextInput
-          label="Confirm Password"
-          :rules="confirmPasswordRules"
-          type="password"
-          placeholder="••••••••••••"
-          class="w-full"
-          ref="confirmPasswordInput"
-          v-model="confirmPassword"
-        />
+          <TextInput
+            label="Password"
+            :rules="passwordRules"
+            type="password"
+            placeholder="••••••••••••"
+            class="w-full"
+            ref="passwordInput"
+            v-model="password"
+          />
 
-        <ButtonPrimary label="Register" type="submit" />
+          <TextInput
+            label="Confirm Password"
+            :rules="confirmPasswordRules"
+            type="password"
+            placeholder="••••••••••••"
+            class="w-full"
+            ref="confirmPasswordInput"
+            v-model="confirmPassword"
+          />
 
-        <div class="flex justify-between">
-          <PageLink to="login">Have an account? Sign in</PageLink>
-          <PageLink to="privacy">Privacy Policy</PageLink>
-        </div>
-      </form>
-    </Card>
+          <ButtonPrimary label="Register" type="submit" />
+
+          <div class="flex justify-between">
+            <PageLink to="login">Have an account? Sign in</PageLink>
+            <PageLink to="privacy">Privacy Policy</PageLink>
+          </div>
+        </form>
+      </Card>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { DialogButton } from "~/types/dialog";
 import type { InputValidationRule } from "~/types/validation";
 
 const config = useRuntimeConfig();
@@ -56,6 +68,17 @@ definePageMeta({
   layout: "auth",
   transitionGroup: "auth",
 });
+
+const dialogOpen = ref<boolean>(false);
+const dialogTitle = ref<string>("");
+const dialogMessage = ref<string>("");
+const dialogButtons = ref<DialogButton[]>([
+  {
+    label: "OK",
+    priority: 1,
+    callback: () => (dialogOpen.value = false),
+  },
+]);
 
 const username = ref<string>("");
 const password = ref<string>("");
@@ -92,8 +115,12 @@ async function register() {
     !usernameInput.value?.isValid ||
     !passwordInput.value?.isValid ||
     !confirmPasswordInput.value?.isValid
-  )
-    return alert("Please correct the errors above.");
+  ) {
+    dialogTitle.value = "Error Signing Up";
+    dialogMessage.value = "Please correct the errors on the form.";
+    dialogOpen.value = true;
+    return;
+  }
 
   const { data, error } = await supabase.auth.signUp({
     email: accountId.value,
@@ -105,10 +132,16 @@ async function register() {
     },
   });
 
-  if (error) return alert(error);
+  if (error) {
+    dialogTitle.value = "Error Signing Up";
+    dialogMessage.value = error.toString();
+    dialogOpen.value = true;
+    return;
+  }
 
-  alert("Account registered successfully!");
-  console.log(data);
+  dialogTitle.value = "Signed Up";
+  dialogMessage.value = "The account has been registered.";
+  dialogOpen.value = true;
 }
 </script>
 

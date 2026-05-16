@@ -2,7 +2,7 @@
   <Transition name="backdrop">
     <div
       v-show="open"
-      class="z-999 fixed flex justify-center items-center left-0 top-0 w-full h-full bg-black/50"
+      class="z-50 fixed flex justify-center items-center left-0 top-0 w-full h-full bg-black/50"
     >
       <Transition name="card" appear>
         <div
@@ -23,21 +23,21 @@
 
           <!-- Button row -->
           <div v-if="props.buttons" class="flex flex-row-reverse gap-5">
-            <template v-for="(action, label) in props.buttons" :key="label">
+            <template v-for="button in props.buttons" :key="button.label">
               <!-- Primary button -->
               <ButtonPrimary
-                v-if="action.priority === 1"
-                :label="label"
+                v-if="button.priority === 1"
+                :label="button.label"
                 class="min-w-24"
-                @click="action.callback"
+                @click="button.callback"
               />
 
               <!-- Secondary button -->
               <ButtonSecondary
-                v-else-if="action.priority === 0"
-                :label="label"
+                v-else-if="button.priority === 2"
+                :label="button.label"
                 class="min-w-24"
-                @click="action.callback"
+                @click="button.callback"
               />
             </template>
           </div>
@@ -48,15 +48,12 @@
 </template>
 
 <script setup lang="ts">
+import type { DialogButton } from "~/types/dialog";
+
 const props = defineProps<{
   open: boolean;
   title: string;
-  buttons: {
-    [key: string]: {
-      priority: 1 | 0; // primary | secondary
-      callback: (...args: any[]) => any;
-    };
-  };
+  buttons: DialogButton[];
 }>();
 
 const emit = defineEmits<{

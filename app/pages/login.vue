@@ -1,54 +1,52 @@
 <template>
-  <Dialog
-    :open="dialogOpen"
-    :title="dialogTitle"
-    @close="dialogOpen = false"
-    :buttons="{
-      OK: {
-        priority: 1,
-        callback: () => (dialogOpen = false),
-      },
-      Cancel: {
-        priority: 0,
-        callback: () => (dialogOpen = false),
-      },
-    }"
-  >
-    {{ dialogMessage }}
-  </Dialog>
-  <div class="flex justify-center items-center p-32 w-screen h-screen">
-    <Card>
-      <h2 class="text-xl font-medium text-slate-500">Log in to your account</h2>
+  <div>
+    <Dialog
+      :open="dialogOpen"
+      :title="dialogTitle"
+      @close="dialogOpen = false"
+      :buttons="dialogButtons"
+    >
+      {{ dialogMessage }}
+    </Dialog>
 
-      <form class="flex flex-col gap-5" @submit.prevent="signIn">
-        <TextInput
-          label="Username"
-          type="text"
-          placeholder="Enter username"
-          class="w-full"
-          v-model="username"
-        />
+    <div class="flex justify-center items-center p-32 w-screen h-screen">
+      <Card>
+        <h2 class="text-xl font-medium text-slate-500">
+          Log in to your account
+        </h2>
 
-        <TextInput
-          label="Password"
-          type="password"
-          placeholder="••••••••••••"
-          class="w-full"
-          v-model="password"
-        />
+        <form class="flex flex-col gap-5" @submit.prevent="signIn">
+          <TextInput
+            label="Username"
+            type="text"
+            placeholder="Enter username"
+            class="w-full"
+            v-model="username"
+          />
 
-        <ButtonPrimary label="Log In" type="submit" />
+          <TextInput
+            label="Password"
+            type="password"
+            placeholder="••••••••••••"
+            class="w-full"
+            v-model="password"
+          />
 
-        <div class="flex justify-between">
-          <PageLink to="register">New here? Register</PageLink>
-          <PageLink to="reset">Forgot password?</PageLink>
-        </div>
-      </form>
-    </Card>
+          <ButtonPrimary label="Log In" type="submit" />
+
+          <div class="flex justify-between">
+            <PageLink to="register">New here? Register</PageLink>
+            <PageLink to="reset">Forgot password?</PageLink>
+          </div>
+        </form>
+      </Card>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { DialogButton } from "~/types/dialog";
+
 const config = useRuntimeConfig();
 const supabase = useSupabaseClient();
 
@@ -60,6 +58,13 @@ definePageMeta({
 const dialogOpen = ref<boolean>(false);
 const dialogTitle = ref<string>("");
 const dialogMessage = ref<string>("");
+const dialogButtons = ref<DialogButton[]>([
+  {
+    label: "OK",
+    priority: 1,
+    callback: () => (dialogOpen.value = false),
+  },
+]);
 
 const username = ref<string>("");
 const password = ref<string>("");
@@ -85,8 +90,9 @@ async function signIn() {
     return;
   }
 
-  alert("Logged in successfully!");
-  console.log(data);
+  dialogTitle.value = "Signed In";
+  dialogMessage.value = "You are now logged in.";
+  dialogOpen.value = true;
 }
 </script>
 
