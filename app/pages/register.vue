@@ -88,14 +88,6 @@ const usernameInput = ref();
 const passwordInput = ref();
 const confirmPasswordInput = ref();
 
-/**
- * The user's account ID, formatted as an email address for Supabase Auth.
- * Not a real email address. The domain is internal and no emails should ever be sent.
- */
-const accountId = computed<string>(
-  () => `${username.value}@${config.public.authEmailDomain}`,
-);
-
 const confirmPasswordRules = computed<readonly InputValidationRule[]>(() => [
   {
     test: (c: string) => c === password.value,
@@ -111,25 +103,25 @@ async function register() {
   passwordInput.value?.validate();
   confirmPasswordInput.value?.validate();
 
-  if (
-    !usernameInput.value?.isValid ||
-    !passwordInput.value?.isValid ||
-    !confirmPasswordInput.value?.isValid
-  ) {
+  try {
+    await $fetch("/api/auth/register", {
+      method: "POST",
+      body: {
+        username: username.value,
+        password: password.value,
+        confirmPassword: confirmPassword.value,
+      },
+    });
+  } catch (e: any) {
     dialogTitle.value = "Error Signing Up";
-    dialogMessage.value = "Please correct the errors on the form.";
+    dialogMessage.value = e.statusMessage;
     dialogOpen.value = true;
     return;
   }
 
-  const { data, error } = await supabase.auth.signUp({
-    email: accountId.value,
+  const { error } = await supabase.auth.signInWithPassword({
+    email: `${username.value}@${config.public.authEmailDomain}`,
     password: password.value,
-    options: {
-      data: {
-        display_name: username.value,
-      },
-    },
   });
 
   if (error) {

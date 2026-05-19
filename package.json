@@ -18,7 +18,8 @@
     "nuxt": "^4.4.2",
     "pinia": "^3.0.4",
     "vue": "^3.5.33",
-    "vue-router": "^5.0.6"
+    "vue-router": "^5.0.6",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "prettier": "3.8.3"
