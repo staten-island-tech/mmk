@@ -2,8 +2,8 @@
   <div class="h-screen w-screen flex flex-col bg-black overflow-hidden font-rajdhani">
 
     <div class="relative z-10 text-center py-4 border-b-2 border-yellow-400 bg-black">
-      <h1 class="text-[13px] tracking-[10px] text-yellow-400 font-bold uppercase">MAIN MENU</h1>
-      <p class="text-[10px] tracking-[5px] text-neutral-500 mt-1 uppercase">CHOOSE YOUR DESTINATION</p>
+      <h1 class="text-[13px] tracking-[10px] text-yellow-400 font-bold uppercase">MMK</h1>
+      <p class="text-[10px] tracking-[5px] text-neutral-500 mt-1 uppercase">FIGHT PEOPLE</p>
     </div>
 
     <div class="flex-1 flex items-center justify-center gap-6 px-8 py-8 bg-black overflow-x-auto snap-x snap-mandatory">
@@ -27,18 +27,18 @@
 
       <div class="flex items-center gap-1">
         <span class="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block"></span>
-        <span class="text-[9px] tracking-[2px] text-neutral-600 font-bold uppercase">Rank</span>
-        <span class="text-[10px] font-bold text-yellow-400 ml-0.5">S+</span>
+        <span class="text-[9px] tracking-[2px] text-neutral-600 font-bold uppercase">Maximum Card Rank</span>
+        <span class="text-[10px] font-bold text-yellow-400 ml-0.5">Grade 4</span>
       </div>
 
       <div class="flex items-center gap-1">
         <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>
-        <span class="text-[9px] tracking-[2px] text-neutral-600 font-bold uppercase">Stock</span>
-        <span class="text-[10px] font-bold text-red-500 ml-0.5">3</span>
+        <span class="text-[9px] tracking-[2px] text-neutral-600 font-bold uppercase">Collection Size</span>
+        <span class="text-[10px] font-bold text-red-500 ml-0.5">1</span>
       </div>
 
       <div class="flex-1"></div>
-      <span class="text-[9px] tracking-[2px] text-neutral-800 font-bold uppercase">ver 15.0.1</span>
+      <span class="text-[9px] tracking-[2px] text-neutral-800 font-bold uppercase">tung tung tung sahur</span>
     </div>
 
   </div>
