@@ -1,0 +1,55 @@
+import * as z from "zod";
+import { serverSupabaseClient } from "#supabase/server";
+
+const config = useRuntimeConfig();
+
+const RegistrationSchema = z
+  .object({
+    username: z.string().min(3, "Username must be at least 3 characters."),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters.")
+      .regex(/[a-z]/i, "Password must contain at least one letter.")
+      .regex(/[0-9]/, "Password must contain at least one number.")
+      .regex(
+        /[^a-z0-9]/i,
+        "Password must contain at least one special character.",
+      ),
+    confirmPassword: z.string(),
+  })
+  // absolute bummer that I have to write this ugly part to get the password confirmation working, but oh well.
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords must match.",
+  });
+
+export default defineEventHandler(async (event) => {
+  const body = await readBody(event);
+
+  const bodyParsed = RegistrationSchema.safeParse(body);
+  if (!bodyParsed.success)
+    // validation failed
+    throw createError({
+      statusCode: 400,
+      statusMessage: bodyParsed.error.issues[0]!.message,
+    });
+
+  const { username, password } = bodyParsed.data;
+
+  const supabase = await serverSupabaseClient(event);
+
+  const { data, error } = await supabase.auth.signUp({
+    email: `${username}@${config.public.authEmailDomain}`,
+    password: password,
+    options: {
+      data: {
+        display_name: username,
+      },
+    },
+  });
+
+  if (error)
+    throw createError({ statusCode: 400, statusMessage: error.message });
+
+  return { data: data };
+});
