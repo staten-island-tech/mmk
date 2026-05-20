@@ -78,7 +78,7 @@ const accountId = computed<string>(
 );
 
 async function signIn() {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { error } = await supabase.auth.signInWithPassword({
     email: accountId.value,
     password: password.value,
   });
@@ -90,9 +90,7 @@ async function signIn() {
     return;
   }
 
-  dialogTitle.value = "Signed In";
-  dialogMessage.value = "You are now logged in.";
-  dialogOpen.value = true;
+  await navigateTo("/dashboard");
 }
 </script>
 
