@@ -65,6 +65,7 @@ const supabase = useSupabaseClient();
 const { usernameRules, passwordRules } = useAuthStore();
 
 definePageMeta({
+  middleware: "public-only",
   layout: "auth",
   transitionGroup: "auth",
 });

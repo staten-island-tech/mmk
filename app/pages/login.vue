@@ -51,6 +51,7 @@ const config = useRuntimeConfig();
 const supabase = useSupabaseClient();
 
 definePageMeta({
+  middleware: "public-only",
   layout: "auth",
   transitionGroup: "auth",
 });
