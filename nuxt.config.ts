@@ -19,7 +19,7 @@ export default defineNuxtConfig({
       login: "/login",
       callback: "/confirm",
       include: undefined,
-      exclude: ["/register"],
+      exclude: ["/", "/register"],
       saveRedirectToCookie: false,
     },
   },
@@ -29,10 +29,10 @@ export default defineNuxtConfig({
     },
   },
   vite: {
-  vue: {
-    script: {
-      babelParserPlugins: []
-    }
-  }
-}
+    vue: {
+      script: {
+        babelParserPlugins: [],
+      },
+    },
+  },
 });
