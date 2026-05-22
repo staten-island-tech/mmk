@@ -121,6 +121,7 @@ export default {
       },
       fontFamily: {
         sans: ["Pixelify Sans", "monospace"],
+        sansAlt: ["Rajdhani", "sans-serif"],
       },
       animation: {
         "domain-ring-breathe": "domain-ring-breathe 18s ease-in-out infinite",
