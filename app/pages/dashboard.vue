@@ -41,7 +41,15 @@
           :config="card"
           class="flex-1 min-w-80 snap-center"
           @action="cardAction"
-        />
+        >
+          <template #icon>
+            <Icon
+              :name="card.icon"
+              class="w-8 h-8"
+              :style="{ color: card.accentColor }"
+            />
+          </template>
+        </DashboardCard>
       </div>
     </main>
 
@@ -119,6 +127,7 @@ const cards = [
     buttonLabel: "Start Game",
     accentColor: colors.sky[400],
     shader: 0,
+    icon: "pixelarticons:play",
   },
   {
     action: "collection",
@@ -127,6 +136,7 @@ const cards = [
     buttonLabel: "View All",
     accentColor: colors.red[400],
     shader: 1,
+    icon: "pixelarticons:briefcase-search",
   },
   {
     action: "settings",
@@ -135,6 +145,7 @@ const cards = [
     buttonLabel: "Configure",
     accentColor: colors.purple[400],
     shader: 2,
+    icon: "pixelarticons:sliders",
   },
   {
     action: "logout",
@@ -143,6 +154,7 @@ const cards = [
     buttonLabel: "Sign Out",
     accentColor: colors.green[400],
     shader: 3,
+    icon: "pixelarticons:logout",
   },
 ];
 

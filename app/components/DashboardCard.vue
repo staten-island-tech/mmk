@@ -35,7 +35,7 @@
           Use `<template #icon> ... </template>` to define this slot.
         -->
         <div
-          class="flex justify-center items-center rounded-full mb-6 w-24 h-24 border-2 border-[var(--accent)] transition-transform duration-200"
+          class="flex justify-center items-center rounded-full mb-6 w-24 h-24 border-2 border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent),transparent_80%)] backdrop-brightness-75 transition-transform duration-200"
           :class="hovered ? 'scale-110' : 'scale-100'"
         >
           <slot name="icon" />
