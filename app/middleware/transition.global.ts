@@ -2,11 +2,21 @@
  * Enforces page transition groups to restrict transitions to certain pages.
  */
 export default defineNuxtRouteMiddleware((to, from) => {
-  const sameGroup =
-    to.meta.transitionGroup &&
-    to.meta.transitionGroup === from.meta.transitionGroup;
+  const transitionName = useState("default-transition-name", () => "default");
 
-  to.meta.pageTransition = sameGroup
-    ? { name: to.meta.transitionGroup as string, mode: "out-in" }
-    : false;
+  const fromGroup = from?.meta?.transitionGroup as string | undefined;
+  const toGroup = to.meta?.transitionGroup as string | undefined;
+
+  const sameGroup = fromGroup && toGroup && fromGroup === toGroup;
+
+  transitionName.value = sameGroup ? fromGroup : "page";
+
+  console.log(
+    "[MW]",
+    from?.path,
+    "->",
+    to.path,
+    "| transition:",
+    transitionName.value,
+  );
 });

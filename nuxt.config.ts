@@ -13,6 +13,10 @@ export default defineNuxtConfig({
     "@fontsource/pixelify-sans/500.css",
     "@fontsource/pixelify-sans/600.css",
     "@fontsource/pixelify-sans/700.css",
+    "@fontsource/rajdhani/400.css",
+    "@fontsource/rajdhani/500.css",
+    "@fontsource/rajdhani/600.css",
+    "@fontsource/rajdhani/700.css",
   ],
   supabase: {
     redirectOptions: {
@@ -29,10 +33,10 @@ export default defineNuxtConfig({
     },
   },
   vite: {
-  vue: {
-    script: {
-      babelParserPlugins: []
-    }
-  }
-}
+    vue: {
+      script: {
+        babelParserPlugins: [],
+      },
+    },
+  },
 });

@@ -1,74 +1,184 @@
 <template>
-  <div class="h-screen w-screen flex flex-col bg-black overflow-hidden font-rajdhani">
+  <div
+    class="overflow-hidden flex flex-col p-4 w-full h-screen font-alt bg-zinc-300"
+  >
+    <header
+      class="flex items-center justify-between gap-4 px-6 py-4 border-4 border-double border-card-border ring-4 ring-card-ring ring-inset bg-card shadow-transparent-lg"
+    >
+      <div class="flex items-center gap-4">
+        <!-- Too lazy to make a custom logo image -->
+        <span
+          class="text-2xl tracking-widest font-sans font-bold text-primary-foreground uppercase"
+        >
+          MMK
+        </span>
 
-    <div class="relative z-10 text-center py-4 border-b-2 border-yellow-400 bg-black">
-      <h1 class="text-[13px] tracking-[10px] text-yellow-400 font-bold uppercase">MMK</h1>
-      <p class="text-[10px] tracking-[5px] text-neutral-500 mt-1 uppercase">FIGHT PEOPLE</p>
-    </div>
-
-    <div class="flex-1 flex items-center justify-center gap-6 px-8 py-8 bg-black overflow-x-auto snap-x snap-mandatory">
-      <DshCard
-        v-for="(card, i) in cards"
-        :key="card.id"
-        :config="card"
-        :index="i"
-        :is-last="i === cards.length - 1"
-        class="w-[360px] h-[calc(100vh-148px)] min-h-[520px] flex-shrink-0 rounded-xl overflow-hidden shadow-2xl border border-white/10"
-      />
-    </div>
-
-    <div class="relative z-10 bg-black border-t border-neutral-900 flex items-center gap-3.5 px-6 py-2.5">
-      <span class="text-[9px] tracking-[2px] text-yellow-400 font-bold uppercase">◆ Status</span>
-      
-      <div class="flex items-center gap-1">
-        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span>
-        <span class="text-[9px] tracking-[2px] text-neutral-600 font-bold uppercase">Online</span>
+        <!-- No clue what else to put here ... sorry -->
+        <span
+          class="hidden sm:block text-sm tracking-widest text-slate-500 uppercase"
+        >
+          {{ Math.random() < 0.5 ? "Ready to fight?" : "Locked in yet?" }}
+        </span>
       </div>
 
-      <div class="flex items-center gap-1">
-        <span class="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block"></span>
-        <span class="text-[9px] tracking-[2px] text-neutral-600 font-bold uppercase">Maximum Card Rank</span>
-        <span class="text-[10px] font-bold text-yellow-400 ml-0.5">Grade 4</span>
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <span class="w-2 h-2 bg-slate-400"></span>
+        <div>
+          Logged in as
+          <span class="font-bold">{{ user?.user_metadata?.display_name }}</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Portals -->
+    <main ref="mainRef" class="relative flex-1 overflow-hidden">
+      <div
+        class="flex h-full items-center gap-8 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none p-12"
+      >
+        <DashboardCard
+          v-for="card in cards"
+          :key="card.action"
+          :config="card"
+          class="flex-1 min-w-80 snap-center"
+          @action="cardAction"
+        >
+          <template #icon>
+            <Icon
+              :name="card.icon"
+              class="w-8 h-8"
+              :style="{ color: card.accentColor }"
+            />
+          </template>
+        </DashboardCard>
+      </div>
+    </main>
+
+    <footer
+      class="shrink-0 flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 md:px-6 md:py-4 border-4 border-double border-card-border ring-4 ring-card-ring ring-inset bg-card shadow-transparent-lg"
+    >
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <span class="w-2 h-2 bg-indigo-300 shrink-0" />
+        <span class="font-semibold uppercase">Games</span>
+        {{ userGames }}
       </div>
 
-      <div class="flex items-center gap-1">
-        <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>
-        <span class="text-[9px] tracking-[2px] text-neutral-600 font-bold uppercase">Collection Size</span>
-        <span class="text-[10px] font-bold text-red-500 ml-0.5">1</span>
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <span class="w-2 h-2 bg-emerald-300 shrink-0" />
+        <span class="font-semibold uppercase">Wins</span>
+        {{ userWins }}
       </div>
 
-      <div class="flex-1"></div>
-      <span class="text-[9px] tracking-[2px] text-neutral-800 font-bold uppercase">tung tung tung sahur</span>
-    </div>
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <span class="w-2 h-2 bg-sky-300 shrink-0" />
+        <span class="font-semibold uppercase">Rank</span>
+        {{ userRank }}
+      </div>
 
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <span class="w-2 h-2 bg-red-300 shrink-0" />
+        <span class="font-semibold uppercase">Cards</span>
+        {{ userCards.length }}
+      </div>
+    </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import DshCard from '~/components/dshCard.vue'
+import colors from "tailwindcss/colors";
+import type { UserStats } from "~/types/user";
 
-export interface CardConfig {
-  id: string
-  label: string
-  sub: string
-  btnText: string
-  accentColor: string
-  textColor: string
-  shader: 0 | 1 | 2 | 3
+const supabase = useSupabaseClient();
+const user = useSupabaseUser();
+
+/** The number of wins the user has. (int32) */
+const userWins = ref<number>(0);
+/** The number of games the user has played. (int32) */
+const userGames = ref<number>(0);
+/** The array of cards the user owns. (int32[]) */
+const userCards = ref<number[]>([]);
+
+/** The user's rank. */
+const userRank = computed<string>(() => {
+  // TODO: Determine the rank of the user based on the highest rarity card the user owns
+  return "Grade I"; // just a placeholder for now
+});
+
+async function logOut() {
+  await supabase.auth.signOut();
+  await navigateTo("login");
 }
 
-const cards: CardConfig[] = [
-  { id: 'play',       label: 'Play',       sub: 'Battle',     btnText: 'Start Game',  accentColor: '#4a9eff', textColor: '#7dbeff', shader: 0 },
-  { id: 'collection', label: 'Collection', sub: 'Cards',      btnText: 'View All',    accentColor: '#ff4a4a', textColor: '#ff8080', shader: 1 },
-  { id: 'settings',   label: 'Settings',   sub: 'Options',    btnText: 'Configure',   accentColor: '#b44aff', textColor: '#cc80ff', shader: 2 },
-  { id: 'logout',     label: 'Logout',     sub: 'Exit',       btnText: 'Sign Out',    accentColor: '#4aff8c', textColor: '#80ffb0', shader: 3 },
-]
+async function cardAction(action: string) {
+  switch (action) {
+    // TODO: Add all cases here
+    case "logout":
+      await logOut();
+      break;
+    default:
+      break;
+  }
+}
+
+const cards = [
+  {
+    action: "play",
+    title: "Play",
+    subtitle: "Battle an opponent",
+    buttonLabel: "Start Game",
+    accentColor: colors.sky[400],
+    shader: 0,
+    icon: "pixelarticons:play",
+  },
+  {
+    action: "collection",
+    title: "Collection",
+    subtitle: "View your cards",
+    buttonLabel: "View All",
+    accentColor: colors.red[400],
+    shader: 1,
+    icon: "pixelarticons:briefcase-search",
+  },
+  {
+    action: "settings",
+    title: "Settings",
+    subtitle: "Change your settings",
+    buttonLabel: "Configure",
+    accentColor: colors.purple[400],
+    shader: 2,
+    icon: "pixelarticons:sliders",
+  },
+  {
+    action: "logout",
+    title: "Log Out",
+    subtitle: "Exit the game",
+    buttonLabel: "Sign Out",
+    accentColor: colors.green[400],
+    shader: 3,
+    icon: "pixelarticons:logout",
+  },
+];
+
+onMounted(async () => {
+  try {
+    const { data: stats }: { data: UserStats } = await $fetch("/api/stats", {
+      method: "GET",
+    });
+
+    userWins.value = stats.wins;
+    userGames.value = stats.games;
+    userCards.value = stats.cards;
+  } catch (e: any) {
+    console.log(e);
+  }
+});
 </script>
 
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap');
+<style scoped>
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
 
-.font-rajdhani {
-  font-family: 'Rajdhani', 'Arial Black', sans-serif;
+.scrollbar-none {
+  scrollbar-width: none;
 }
 </style>

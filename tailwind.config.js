@@ -2,7 +2,7 @@ import colors from "tailwindcss/colors";
 
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./app/**/*.vue"],
+  content: ["./app/**/*.vue", "./components/**/*.vue"],
   theme: {
     extend: {
       colors: {
@@ -121,7 +121,7 @@ export default {
       },
       fontFamily: {
         sans: ["Pixelify Sans", "monospace"],
-        sansAlt: ["Rajdhani", "sans-serif"],
+        alt: ["Rajdhani", "sans-serif"],
       },
       animation: {
         "domain-ring-breathe": "domain-ring-breathe 18s ease-in-out infinite",
