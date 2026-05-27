@@ -1,6 +1,6 @@
 <template>
   <div
-    class="overflow-hidden flex flex-col p-4 w-full h-screen font-alt bg-zinc-300"
+    class="overflow-hidden flex flex-col p-4 w-screen h-screen font-alt bg-zinc-300"
   >
     <header
       class="flex items-center justify-between gap-4 px-6 py-4 border-4 border-double border-card-border ring-4 ring-card-ring ring-inset bg-card shadow-transparent-lg"
@@ -17,12 +17,12 @@
         <span
           class="hidden sm:block text-sm tracking-widest text-slate-500 uppercase"
         >
-          {{ Math.random() < 0.5 ? "Ready to fight?" : "Locked in yet?" }}
+          {{ message }}
         </span>
       </div>
 
       <div class="flex items-center gap-2 text-sm text-slate-500">
-        <span class="w-2 h-2 bg-slate-400"></span>
+        <Icon name="pixelarticons:user" class="w-4 h-4 font-slate-500" />
         <div>
           Logged in as
           <span class="font-bold">{{ user?.user_metadata?.display_name }}</span>
@@ -56,28 +56,30 @@
     <footer
       class="shrink-0 flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 md:px-6 md:py-4 border-4 border-double border-card-border ring-4 ring-card-ring ring-inset bg-card shadow-transparent-lg"
     >
-      <div class="flex items-center gap-2 text-sm text-slate-500">
-        <span class="w-2 h-2 bg-indigo-300 shrink-0" />
-        <span class="font-semibold uppercase">Games</span>
-        {{ userGames }}
+      <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
+        <Icon
+          name="pixelarticons:briefcase-account"
+          class="w-4 h-4 text-red-500"
+        />
+        {{ userCards.length }} cards
       </div>
 
-      <div class="flex items-center gap-2 text-sm text-slate-500">
-        <span class="w-2 h-2 bg-emerald-300 shrink-0" />
-        <span class="font-semibold uppercase">Wins</span>
-        {{ userWins }}
+      <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
+        <Icon name="pixelarticons:gamepad" class="w-4 h-4 text-indigo-500" />
+        {{ userGames }} games
       </div>
 
-      <div class="flex items-center gap-2 text-sm text-slate-500">
-        <span class="w-2 h-2 bg-sky-300 shrink-0" />
-        <span class="font-semibold uppercase">Rank</span>
+      <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
+        <Icon name="pixelarticons:trophy" class="w-4 h-4 text-emerald-500" />
+        {{ userWins }} wins
+      </div>
+
+      <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
+        <Icon
+          name="pixelarticons:cellular-signal-0"
+          class="w-4 h-4 text-sky-500"
+        />
         {{ userRank }}
-      </div>
-
-      <div class="flex items-center gap-2 text-sm text-slate-500">
-        <span class="w-2 h-2 bg-red-300 shrink-0" />
-        <span class="font-semibold uppercase">Cards</span>
-        {{ userCards.length }}
       </div>
     </footer>
   </div>
@@ -103,21 +105,29 @@ const userRank = computed<string>(() => {
   return "Grade I"; // just a placeholder for now
 });
 
-async function logOut() {
-  await supabase.auth.signOut();
-  await navigateTo("login");
-}
-
 async function cardAction(action: string) {
   switch (action) {
     // TODO: Add all cases here
+    case "play":
+      await navigateTo("/queue");
+      break;
     case "logout":
-      await logOut();
+      await supabase.auth.signOut();
+      await navigateTo("/login");
       break;
     default:
       break;
   }
 }
+
+const message = computed<string>(() => {
+  const messages: string[] = [
+    "Ready to fight?",
+    "Locked in yet?",
+    "Choose a portal!",
+  ];
+  return messages[Math.floor(Math.random() * messages.length)]!;
+});
 
 const cards = [
   {
