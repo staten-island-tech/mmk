@@ -1,106 +1,81 @@
 <template>
-  <div class="h-screen w-screen overflow-hidden bg-black font-rajdhani relative">
-    <!-- Top Bar -->
-       <SpaceDefault/>
-
-    <div class="relative z-20 text-center py-6 border-b border-yellow-400/30 bg-black/70 backdrop-blur-xl">
-      <h1 class="text-[15px] tracking-[12px] text-yellow-400 font-bold uppercase">MMK</h1>
-    </div>
-
-    <!-- Main Content -->
-    <div class="relative z-20 flex-1 flex flex-col items-center justify-center gap-12">
-      <!-- Central Visual -->
-      <div class="relative flex flex-col items-center">
-        <div class="relative w-[460px] h-[460px] flex items-center justify-center">
-          <!-- Outer Ring -->
-          <div class="absolute w-[440px] h-[440px] border border-yellow-400/20 rounded-full"></div>
-          <div class="absolute w-[360px] h-[360px] border border-yellow-400/30 rounded-full animate-[spin_25s_linear_infinite]"></div>
-          
-          <!-- Inner Glow -->
-          <div class="absolute w-[220px] h-[220px] bg-yellow-400/10 rounded-full blur-3xl"></div>
-          
-          <!-- Fighter Core -->
-          <div class="relative text-[160px] text-yellow-400/10 font-black select-none leading-none">
-            ⚔️
-          </div>
-
-          <!-- Scanning Effect -->
-          <div class="absolute inset-0 border border-yellow-400/40 rounded-full animate-ping-slow"></div>
-        </div>
-      </div>
-
-      <!-- Queuing Text -->
-      <div class="text-center">
-        <div class="text-yellow-400 text-3xl font-bold tracking-[8px] uppercase mb-3">
-          QUEUING
-        </div>
-        <div class="text-neutral-400 text-sm tracking-[4px] font-light">
-          SEARCHING FOR WORTHY OPPONENT
-        </div>
-      </div>
-
-      <!-- Progress Bar -->
-      <div class="w-96">
-        <div class="h-[3px] bg-neutral-900 rounded-full overflow-hidden">
-          <div 
-            class="h-full w-0 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-400 animate-progress"
-          />
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom Bar -->
-    <div class="relative z-20 flex justify-center pb-12">
-      <button 
-        @click="cancelSearch"
-        class="group px-12 py-4 border border-red-500/70 hover:border-red-500 text-red-400 hover:text-red-300 font-bold tracking-[3px] text-sm uppercase transition-all flex items-center gap-3 hover:bg-red-500/5 rounded-xl"
-      >
-        <span class="text-xl group-active:rotate-90 transition-transform">✕</span>
-        BACK
-      </button>
+  <div
+    class="flex justify-center items-center p-4 w-screen h-screen bg-zinc-300"
+  >
+    <DomainBackground class="brightness-[35%]" />
+    <div
+      class="z-10 flex flex-col justify-center items-center text-center gap-6"
+    >
+      <Icon
+        name="pixelarticons:search"
+        class="hover w-36 h-36 md:w-40 md:h-40 text-blue-400"
+      />
+      <h1 class="text-4xl md:text-5xl font-bold">
+        <span class="px-2 text-red-300 rounded-l-lg bg-red-800">Match</span
+        ><span class="px-2 text-blue-300 rounded-r-lg bg-blue-800">making</span>
+      </h1>
+      <h2 class="text-xl md:text-2xl tracking-wider text-blue-200">
+        Searching for a worthy opponent<span class="dots"></span>
+      </h2>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
-import SpaceDefault from '~/components/Domains/SpaceDefault.vue'
-
-function cancelSearch() {
-  // router.push back to dashboard or emit event
-  alert("Returning to dashboard...")
-}
+const user = useSupabaseUser();
 </script>
 
-
 <style scoped>
-.font-rajdhani {
-  font-family: 'Rajdhani', system-ui, sans-serif;
+.hover {
+  animation: float 2s cubic-bezier(0.15, 0.8, 0.5, 1) infinite;
 }
 
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+.dots::after {
+  content: "";
+  animation: dots 2s infinite;
 }
 
-@keyframes ping-out {
-  0%   { transform: scale(0.9); opacity: 0.6; }
-  100% { transform: scale(2.2); opacity: 0; }
+@keyframes float {
+  0% {
+    @apply text-blue-300;
+    transform: translateX(15px) translateY(0);
+  }
+
+  33% {
+    @apply text-red-300;
+    transform: translateX(0) translateY(-30px);
+  }
+
+  67% {
+    @apply text-purple-300;
+    transform: translateX(-15px) translateY(0);
+  }
+
+  100% {
+    @apply text-blue-300;
+    transform: translateX(15px) translateY(0);
+  }
 }
 
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0px rgba(245,196,60,0); }
-  50%       { box-shadow: 0 0 24px 4px rgba(245,196,60,0.18); }
-}
+@keyframes dots {
+  0% {
+    content: "";
+  }
 
-@keyframes dot-pulse {
-  0%, 100% { background: rgba(245,196,60,0.15); transform: scale(1); }
-  50%       { background: rgba(245,196,60,0.7);  transform: scale(1.3); }
-}
+  25% {
+    content: ".";
+  }
 
-@keyframes progress-sweep {
-  0%   { width: 10%; margin-left: 0; }
-  100% { width: 55%; margin-left: 40%; }
-}
+  50% {
+    content: "..";
+  }
 
+  75% {
+    content: "...";
+  }
+
+  100% {
+    content: "";
+  }
+}
 </style>
