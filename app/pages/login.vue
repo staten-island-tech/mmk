@@ -1,45 +1,48 @@
 <template>
-  <div>
-    <Dialog
-      :open="dialogOpen"
-      :title="dialogTitle"
-      @close="dialogOpen = false"
-      :buttons="dialogButtons"
-    >
-      {{ dialogMessage }}
-    </Dialog>
+  <div class="overflow-hidden">
+    <DomainBackground class="absolute -z-10" />
+    <div>
+      <Dialog
+        :open="dialogOpen"
+        :title="dialogTitle"
+        @close="dialogOpen = false"
+        :buttons="dialogButtons"
+      >
+        {{ dialogMessage }}
+      </Dialog>
 
-    <div class="flex justify-center items-center p-32 w-screen h-screen">
-      <Card>
-        <h2 class="text-xl font-medium text-slate-500">
-          Log in to your account
-        </h2>
+      <div class="flex justify-center items-center p-32 w-screen h-screen">
+        <Card>
+          <h2 class="text-xl font-medium text-slate-500">
+            Log in to your account
+          </h2>
 
-        <form class="flex flex-col gap-5" @submit.prevent="signIn">
-          <TextInput
-            label="Username"
-            type="text"
-            placeholder="Enter username"
-            class="w-full"
-            v-model="username"
-          />
+          <form class="flex flex-col gap-5" @submit.prevent="signIn">
+            <TextInput
+              label="Username"
+              type="text"
+              placeholder="Enter username"
+              class="w-full"
+              v-model="username"
+            />
 
-          <TextInput
-            label="Password"
-            type="password"
-            placeholder="••••••••••••"
-            class="w-full"
-            v-model="password"
-          />
+            <TextInput
+              label="Password"
+              type="password"
+              placeholder="••••••••••••"
+              class="w-full"
+              v-model="password"
+            />
 
-          <ButtonPrimary label="Log In" type="submit" />
+            <ButtonPrimary label="Log In" type="submit" />
 
-          <div class="flex justify-between">
-            <PageLink to="register">New here? Register</PageLink>
-            <PageLink to="reset">Forgot password?</PageLink>
-          </div>
-        </form>
-      </Card>
+            <div class="flex justify-between">
+              <PageLink to="register">New here? Register</PageLink>
+              <PageLink to="reset">Forgot password?</PageLink>
+            </div>
+          </form>
+        </Card>
+      </div>
     </div>
   </div>
 </template>
@@ -52,8 +55,6 @@ const supabase = useSupabaseClient();
 
 definePageMeta({
   middleware: "public-only",
-  layout: "auth",
-  transitionGroup: "auth",
 });
 
 const dialogOpen = ref<boolean>(false);
