@@ -7,5 +7,5 @@ export default defineNuxtRouteMiddleware(async () => {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (session?.user) return navigateTo("/dashboard", { replace: true });
+  if (session?.user) return navigateTo("/", { replace: true });
 });

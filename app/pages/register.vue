@@ -139,7 +139,7 @@ async function register() {
   dialogMessage.value = "The account has been registered.";
   dialogOpen.value = true;
 
-  await navigateTo("/dashboard");
+  await navigateTo("/");
 }
 </script>
 
