@@ -2,7 +2,7 @@
   <div
     class="flex justify-center items-center p-4 w-screen h-screen bg-zinc-300"
   >
-    <DomainBackground class="brightness-[35%]" />
+    <DomainBackground class="brightness-75" />
     <div
       class="z-10 flex flex-col justify-center items-center text-center gap-6"
     >
