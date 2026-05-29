@@ -87,7 +87,7 @@
 
 <script setup lang="ts">
 import colors from "tailwindcss/colors";
-import type { UserStats } from "~/types/user";
+import type { UserStats, UserCard } from "~/types/user";
 
 const supabase = useSupabaseClient();
 const user = useSupabaseUser();
@@ -97,12 +97,23 @@ const userWins = ref<number>(0);
 /** The number of games the user has played. (int32) */
 const userGames = ref<number>(0);
 /** The array of cards the user owns. (int32[]) */
-const userCards = ref<number[]>([]);
+const userCards = ref<UserCard[]>([]);
 
-/** The user's rank. */
+/**
+ * The user's rank.
+ * Determined by the highest ranking card in the user's collection.
+ */
 const userRank = computed<string>(() => {
-  // TODO: Determine the rank of the user based on the highest rarity card the user owns
-  return "Grade I"; // just a placeholder for now
+  /* Find the rarity with the highest desperation constant.
+   * The `userCards.value.reduce()` call compares `a` (the accumulator, a.k.a. the last visited card with the highest desperation constant) and `b` (the current card).
+   *   - If the desperation constant of `a` is still greater than that of `b` (i.e., `b` is not a possible candidate for the user's rank), return `a` as the same accumulator.
+   *   - Otherwise, if the desperation constant of `a` is less than or equal to that of `b`, return `b` as the new accumulator (i.e., the currently known card with the highest desperation constant).
+   */
+  return userCards.value.length
+    ? userCards.value.reduce((a, b) =>
+        a.rarity.weight > b.rarity.weight ? a : b,
+      ).rarity.name
+    : "Grade I";
 });
 
 async function cardAction(action: string) {
