@@ -17,11 +17,7 @@
       <h2 class="text-xl md:text-2xl tracking-wider text-blue-200">
         Searching for a worthy opponent<span class="dots"></span>
       </h2>
-      <ButtonAccent
-        label="Cancel"
-        class="w-36"
-        @click="navigateTo('/dashboard')"
-      />
+      <ButtonAccent label="Cancel" class="w-36" @click="navigateTo('/')" />
     </div>
   </div>
 </template>

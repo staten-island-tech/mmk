@@ -92,7 +92,7 @@ async function signIn() {
     return;
   }
 
-  await navigateTo("/dashboard");
+  await navigateTo("/");
 }
 </script>
 
