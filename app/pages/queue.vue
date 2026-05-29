@@ -2,7 +2,7 @@
   <div
     class="flex justify-center items-center p-4 w-screen h-screen bg-zinc-300"
   >
-    <DomainBackground class="brightness-75" />
+    <UiBackgroundDomain class="brightness-75" />
     <div
       class="z-10 flex flex-col justify-center items-center text-center gap-6"
     >
@@ -17,7 +17,11 @@
       <h2 class="text-xl md:text-2xl tracking-wider text-blue-200">
         Searching for a worthy opponent<span class="dots"></span>
       </h2>
-      <ButtonAccent label="Cancel" class="w-36" @click="navigateTo('/')" />
+      <UiButtonSimpleAccent
+        label="Cancel"
+        class="w-36"
+        @click="navigateTo('/')"
+      />
     </div>
   </div>
 </template>

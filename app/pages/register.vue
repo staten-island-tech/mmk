@@ -1,24 +1,25 @@
 <template>
   <div class="overflow-hidden">
-    <DomainBackground class="absolute -z-10" />
+    <UiBackgroundDomain class="absolute -z-10" />
+
     <div>
-      <Dialog
+      <UiModalSimple
         :open="dialogOpen"
         :title="dialogTitle"
         @close="dialogOpen = false"
         :buttons="dialogButtons"
       >
         {{ dialogMessage }}
-      </Dialog>
+      </UiModalSimple>
 
       <div class="flex justify-center items-center p-32 w-screen h-screen">
-        <Card>
+        <UiCardSimple>
           <h2 class="text-xl font-medium text-slate-500">
             Create a new account
           </h2>
 
           <form class="flex flex-col gap-5" @submit.prevent="register">
-            <TextInput
+            <UiFormInputSimple
               label="Username"
               :rules="usernameRules"
               type="text"
@@ -28,7 +29,7 @@
               v-model="username"
             />
 
-            <TextInput
+            <UiFormInputSimple
               label="Password"
               :rules="passwordRules"
               type="password"
@@ -38,7 +39,7 @@
               v-model="password"
             />
 
-            <TextInput
+            <UiFormInputSimple
               label="Confirm Password"
               :rules="confirmPasswordRules"
               type="password"
@@ -48,14 +49,16 @@
               v-model="confirmPassword"
             />
 
-            <ButtonPrimary label="Register" type="submit" />
+            <UiButtonSimplePrimary label="Register" type="submit" />
 
             <div class="flex justify-between">
-              <PageLink to="login">Have an account? Sign in</PageLink>
-              <PageLink to="privacy">Privacy Policy</PageLink>
+              <UiFormPageLink to="/login"
+                >Have an account? Sign in</UiFormPageLink
+              >
+              <UiFormPageLink to="/privacy">Privacy Policy</UiFormPageLink>
             </div>
           </form>
-        </Card>
+        </UiCardSimple>
       </div>
     </div>
   </div>

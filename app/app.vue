@@ -1,11 +1,7 @@
 <template>
-  <div>
-    <NuxtLayout>
-      <Transition name="default" mode="out-in">
-        <NuxtPage />
-      </Transition>
-    </NuxtLayout>
-  </div>
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts"></script>

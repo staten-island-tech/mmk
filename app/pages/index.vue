@@ -1,120 +1,31 @@
 <template>
-  <div
-    class="overflow-hidden flex flex-col p-4 w-screen h-screen font-alt bg-zinc-300"
-  >
-    <header
-      class="flex items-center justify-between gap-4 px-6 py-4 border-4 border-double border-card-border ring-4 ring-card-ring ring-inset bg-card shadow-transparent-lg"
+  <UiDashboardShell>
+    <div
+      class="flex h-full items-center gap-8 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none p-12"
     >
-      <div class="flex items-center gap-4">
-        <!-- Too lazy to make a custom logo image -->
-        <span
-          class="text-2xl tracking-widest font-sans font-bold text-primary-foreground uppercase"
-        >
-          MMK
-        </span>
-
-        <!-- No clue what else to put here ... sorry -->
-        <span
-          class="hidden sm:block text-sm tracking-widest text-slate-500 uppercase"
-        >
-          {{ message }}
-        </span>
-      </div>
-
-      <div class="flex items-center gap-2 text-sm text-slate-500">
-        <Icon name="pixelarticons:user" class="w-4 h-4 font-slate-500" />
-        <div>
-          Logged in as
-          <span class="font-bold">{{ user?.user_metadata?.display_name }}</span>
-        </div>
-      </div>
-    </header>
-
-    <!-- Portals -->
-    <main ref="mainRef" class="relative flex-1 overflow-hidden">
-      <div
-        class="flex h-full items-center gap-8 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none p-12"
+      <UiDashboardPortal
+        v-for="card in cards"
+        :key="card.action"
+        :config="card"
+        class="flex-1 min-w-80 snap-center"
+        @action="cardAction"
       >
-        <DashboardCard
-          v-for="card in cards"
-          :key="card.action"
-          :config="card"
-          class="flex-1 min-w-80 snap-center"
-          @action="cardAction"
-        >
-          <template #icon>
-            <Icon
-              :name="card.icon"
-              class="w-8 h-8"
-              :style="{ color: card.accentColor }"
-            />
-          </template>
-        </DashboardCard>
-      </div>
-    </main>
-
-    <footer
-      class="shrink-0 flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 md:px-6 md:py-4 border-4 border-double border-card-border ring-4 ring-card-ring ring-inset bg-card shadow-transparent-lg"
-    >
-      <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
-        <Icon
-          name="pixelarticons:briefcase-account"
-          class="w-4 h-4 text-red-500"
-        />
-        {{ userCards.length }} cards
-      </div>
-
-      <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
-        <Icon name="pixelarticons:gamepad" class="w-4 h-4 text-indigo-500" />
-        {{ userGames }} games
-      </div>
-
-      <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
-        <Icon name="pixelarticons:trophy" class="w-4 h-4 text-emerald-500" />
-        {{ userWins }} wins
-      </div>
-
-      <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
-        <Icon
-          name="pixelarticons:cellular-signal-0"
-          class="w-4 h-4 text-sky-500"
-        />
-        {{ userRank }}
-      </div>
-    </footer>
-  </div>
+        <template #icon>
+          <Icon
+            :name="card.icon"
+            class="w-8 h-8"
+            :style="{ color: card.accentColor }"
+          />
+        </template>
+      </UiDashboardPortal>
+    </div>
+  </UiDashboardShell>
 </template>
 
 <script setup lang="ts">
 import colors from "tailwindcss/colors";
-import type { UserStats, UserCard } from "~/types/user";
 
-const supabase = useSupabaseClient();
-const user = useSupabaseUser();
-
-/** The number of wins the user has. (int32) */
-const userWins = ref<number>(0);
-/** The number of games the user has played. (int32) */
-const userGames = ref<number>(0);
-/** The array of cards the user owns. (int32[]) */
-const userCards = ref<UserCard[]>([]);
-
-/**
- * The user's rank.
- * Determined by the highest ranking card in the user's collection.
- */
-const userRank = computed<string>(() => {
-  /* Find the rarity with the highest desperation constant.
-   * The `userCards.value.reduce()` call compares `a` (the accumulator, a.k.a. the last visited card with the highest desperation constant) and `b` (the current card).
-   *   - If the desperation constant of `a` is still greater than that of `b` (i.e., `b` is not a possible candidate for the user's rank), return `a` as the same accumulator.
-   *   - Otherwise, if the desperation constant of `a` is less than or equal to that of `b`, return `b` as the new accumulator (i.e., the currently known card with the highest desperation constant).
-   */
-  return userCards.value.length
-    ? userCards.value.reduce((a, b) =>
-        a.rarity.weight > b.rarity.weight ? a : b,
-      ).rarity.name
-    : "Grade I";
-});
+const user = useUserStore();
 
 async function cardAction(action: string) {
   switch (action) {
@@ -122,23 +33,17 @@ async function cardAction(action: string) {
     case "play":
       await navigateTo("/queue");
       break;
+    case "collection":
+      await navigateTo("/collection");
+      break;
     case "logout":
-      await supabase.auth.signOut();
+      await user.supabase.auth.signOut();
       await navigateTo("/login");
       break;
     default:
       break;
   }
 }
-
-const message = computed<string>(() => {
-  const messages: string[] = [
-    "Ready to fight?",
-    "Locked in yet?",
-    "Choose a portal!",
-  ];
-  return messages[Math.floor(Math.random() * messages.length)]!;
-});
 
 const cards = [
   {
@@ -178,20 +83,6 @@ const cards = [
     icon: "pixelarticons:logout",
   },
 ];
-
-onMounted(async () => {
-  try {
-    const { data: stats }: { data: UserStats } = await $fetch("/api/stats", {
-      method: "GET",
-    });
-
-    userWins.value = stats.wins;
-    userGames.value = stats.games;
-    userCards.value = stats.cards;
-  } catch (e: any) {
-    console.log(e);
-  }
-});
 </script>
 
 <style scoped>

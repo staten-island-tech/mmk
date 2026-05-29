@@ -1,24 +1,25 @@
 <template>
   <div class="overflow-hidden">
-    <DomainBackground class="absolute -z-10" />
+    <UiBackgroundDomain class="absolute -z-10" />
+
     <div>
-      <Dialog
+      <UiModalSimple
         :open="dialogOpen"
         :title="dialogTitle"
         @close="dialogOpen = false"
         :buttons="dialogButtons"
       >
         {{ dialogMessage }}
-      </Dialog>
+      </UiModalSimple>
 
       <div class="flex justify-center items-center p-32 w-screen h-screen">
-        <Card>
+        <UiCardSimple>
           <h2 class="text-xl font-medium text-slate-500">
             Log in to your account
           </h2>
 
           <form class="flex flex-col gap-5" @submit.prevent="signIn">
-            <TextInput
+            <UiFormInputSimple
               label="Username"
               type="text"
               placeholder="Enter username"
@@ -26,7 +27,7 @@
               v-model="username"
             />
 
-            <TextInput
+            <UiFormInputSimple
               label="Password"
               type="password"
               placeholder="••••••••••••"
@@ -34,14 +35,14 @@
               v-model="password"
             />
 
-            <ButtonPrimary label="Log In" type="submit" />
+            <UiButtonSimplePrimary label="Log In" type="submit" />
 
             <div class="flex justify-between">
-              <PageLink to="register">New here? Register</PageLink>
-              <PageLink to="reset">Forgot password?</PageLink>
+              <UiFormPageLink to="/register">New here? Register</UiFormPageLink>
+              <UiFormPageLink to="/privacy">Privacy Policy</UiFormPageLink>
             </div>
           </form>
-        </Card>
+        </UiCardSimple>
       </div>
     </div>
   </div>
