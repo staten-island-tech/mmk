@@ -1,5 +1,5 @@
 <template>
-  <UiDashboardShell>
+  <UiDashboardShell :title="message">
     <div
       class="overflow-x-auto flex h-full items-center gap-8 snap-x snap-mandatory scroll-smooth scrollbar-none p-12"
     >
@@ -26,6 +26,11 @@
 import colors from "tailwindcss/colors";
 
 const user = useUserStore();
+
+const message = computed<string>(() => {
+  const messages: string[] = ["Ready to fight?", "Locked in yet?"];
+  return messages[Math.floor(Math.random() * messages.length)]!;
+});
 
 async function cardAction(action: string) {
   switch (action) {

@@ -16,7 +16,7 @@
         <span
           class="hidden sm:block text-sm tracking-widest text-slate-500 uppercase"
         >
-          {{ message }}
+          {{ props.title }}
         </span>
       </div>
 
@@ -70,10 +70,9 @@
 <script setup lang="ts">
 const user = useUserStore();
 
-const message = computed<string>(() => {
-  const messages: string[] = ["Ready to fight?", "Locked in yet?"];
-  return messages[Math.floor(Math.random() * messages.length)]!;
-});
+const props = defineProps<{
+  title?: string;
+}>();
 
 onMounted(async () => {
   user.fetchStats();
