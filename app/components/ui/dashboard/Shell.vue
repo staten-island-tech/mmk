@@ -6,11 +6,12 @@
       class="flex items-center justify-between gap-4 px-6 py-4 border-4 border-double border-card-border ring-4 ring-card-ring ring-inset bg-card shadow-transparent-lg"
     >
       <div class="flex items-center gap-4">
-        <span
-          class="text-2xl tracking-widest font-sans font-bold text-primary-foreground uppercase"
+        <h1
+          class="cursor-pointer text-2xl tracking-widest font-sans font-bold text-primary-foreground uppercase"
+          @click="navigateTo('/')"
         >
           MMK
-        </span>
+        </h1>
 
         <span
           class="hidden sm:block text-sm tracking-widest text-slate-500 uppercase"
@@ -70,11 +71,7 @@
 const user = useUserStore();
 
 const message = computed<string>(() => {
-  const messages: string[] = [
-    "Ready to fight?",
-    "Locked in yet?",
-    "Choose a portal!",
-  ];
+  const messages: string[] = ["Ready to fight?", "Locked in yet?"];
   return messages[Math.floor(Math.random() * messages.length)]!;
 });
 

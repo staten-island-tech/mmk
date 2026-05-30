@@ -1,7 +1,7 @@
 <template>
   <UiDashboardShell>
     <div
-      class="flex h-full items-center gap-8 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none p-12"
+      class="overflow-x-auto flex h-full items-center gap-8 snap-x snap-mandatory scroll-smooth scrollbar-none p-12"
     >
       <UiDashboardPortal
         v-for="card in cards"
