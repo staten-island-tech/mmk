@@ -1,4 +1,4 @@
-import type { UserStats, UserCard } from "~/types/user";
+import type { UserStats, UserCardSimple } from "~/types/user";
 
 export const useUserStore = defineStore("user", () => {
   const supabase = useSupabaseClient();
@@ -8,8 +8,8 @@ export const useUserStore = defineStore("user", () => {
   const wins = ref<number>(0);
   /** The number of games the user has played. (int32) */
   const games = ref<number>(0);
-  /** The array of cards the user owns. (int32[]) */
-  const cards = ref<UserCard[]>([]);
+  /** The array of card the user owns. (jsonb) */
+  const cards = ref<UserCardSimple[]>([]);
 
   /**
    * The user's rank.

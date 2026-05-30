@@ -7,11 +7,11 @@ export interface UserStats {
   /** The number of games the user has played. */
   readonly games: number;
   /** The array of card IDs the user owns. */
-  readonly cards: UserCard[];
+  readonly cards: UserCardSimple[];
 }
 
-/** User card schema. */
-export interface UserCard {
+/** Simplified user card schema. */
+export interface UserCardSimple {
   /** The card ID. */
   readonly id: number;
   /** The card's move IDs. */

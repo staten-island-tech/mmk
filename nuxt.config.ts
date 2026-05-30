@@ -30,6 +30,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       authEmailDomain: "",
+      mmkPanelApi: "",
     },
   },
   vite: {
