@@ -13,7 +13,7 @@
       </UiModalSimple>
 
       <div class="flex justify-center items-center p-32 w-screen h-screen">
-        <UiCardSimple>
+        <UiCardSimple class="p-10 gap-5 w-full">
           <h2 class="text-xl font-medium text-slate-500">
             Create a new account
           </h2>
