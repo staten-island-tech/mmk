@@ -39,10 +39,10 @@
         <template v-else>
           <UiCardSimple
             v-for="card in cards"
-            class="flex flex-col w-full h-[34rem]"
+            class="flex flex-col w-[28rem] h-[34rem]"
           >
-            <div class="flex justify-center p-4 w-full bg-slate-300">
-              <img :src="card.defaultSprite" class="h-48" />
+            <div class="flex-1 flex justify-center items-center p-8 w-full min-h-48 bg-slate-300">
+              <img :src="card.defaultSprite" class="max-h-40" />
             </div>
 
             <div
