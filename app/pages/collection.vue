@@ -12,7 +12,7 @@
       >
         <div
           v-if="loading"
-          class="flex flex-col justify-center items-center gap-4 w-full h-full"
+          class="flex flex-col justify-center items-center text-center gap-4 w-full h-full"
         >
           <Icon
             name="lucide:loader-circle"
@@ -25,7 +25,7 @@
 
         <div
           v-else-if="cards.length === 0"
-          class="flex flex-col justify-center items-center gap-4 w-full h-full"
+          class="flex flex-col justify-center items-center text-center gap-4 w-full h-full"
         >
           <Icon
             name="pixelarticons:mood-sad"
