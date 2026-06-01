@@ -1,6 +1,16 @@
-# MMK
+<p align="center">
+  <img src="public/favicon.ico" alt="Logo" width="256" />
+</p>
 
-MMK is a turn-based online multiplayer game with gacha features.
+<p align="center">
+  <img src="https://img.shields.io/github/languages/top/v81d/mmk?style=for-the-badge" />
+  <img src="https://img.shields.io/github/contributors/v81d/mmk?style=for-the-badge" />
+  <img src="https://img.shields.io/github/license/v81d/mmk?style=for-the-badge" />
+</p>
+
+---
+
+**MMK** is a turn-based online multiplayer game with gacha features.
 
 ## Setup
 
