@@ -10,8 +10,8 @@ To host MMK, you must have the following backend services running on a server:
 
 1. [Supabase](https://supabase.com), an open-source PostgreSQL development platform.
 
-   > [!IMPORTANT]
-   > You must set up your Supabase project in a specific way for MMK to work properly. Import the [schema](supabase-schema.sql) to instantly configure your PostgreSQL server.
+> [!IMPORTANT]
+> You must set up your Supabase project in a specific way for MMK to work properly. Import the [schema](supabase-schema.sql) to instantly configure your PostgreSQL server.
 
 2. [MMK Panel](https://github.com/v81d/mmk-panel), the official Django-based administration panel for MMK.
 
