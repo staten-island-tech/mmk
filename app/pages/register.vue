@@ -138,10 +138,6 @@ async function register() {
     return;
   }
 
-  dialogTitle.value = "Signed Up";
-  dialogMessage.value = "The account has been registered.";
-  dialogOpen.value = true;
-
   await navigateTo("/");
 }
 </script>

@@ -1,11 +1,32 @@
 import * as z from "zod";
+import {
+  RegExpMatcher,
+  englishDataset,
+  englishRecommendedTransformers,
+} from "obscenity";
 import { serverSupabaseClient } from "#supabase/server";
+
+const matcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+});
 
 const config = useRuntimeConfig();
 
 const RegistrationSchema = z
   .object({
-    username: z.string().min(3, "Username must be at least 3 characters."),
+    username: z
+      .string()
+      .min(3, "Username must be at least 3 characters.")
+      .max(20, "Username cannot exceed 20 characters.")
+      .regex(
+        /^[a-zA-Z0-9_]+$/,
+        "Username may only contain letters, numbers, and underscores.",
+      )
+      .refine(
+        (username) => !matcher.hasMatch(username),
+        "Username must not contain inappropriate language.",
+      ),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters.")
