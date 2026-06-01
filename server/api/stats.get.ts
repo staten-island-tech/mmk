@@ -1,27 +1,25 @@
-import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
+import {
+  serverSupabaseServiceRole,
+  serverSupabaseUser,
+} from "#supabase/server";
+import type { Database } from "~/types/database.types";
 
 export default defineEventHandler(async (event) => {
-  const supabase = await serverSupabaseClient(event);
   const user = await serverSupabaseUser(event);
 
   if (!user)
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Unauthorized",
-    });
+    throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
 
-  // Get stats of user with retrieved UID
+  const supabase = serverSupabaseServiceRole<Database>(event);
+
   const { data, error } = await supabase
     .from("user_stats")
     .select("*")
-    .eq("uid", user.user_metadata?.sub)
+    .eq("uid", user.sub)
     .single();
 
   if (error)
-    throw createError({
-      statusCode: 500,
-      statusMessage: error.message,
-    });
+    throw createError({ statusCode: 500, statusMessage: error.message });
 
   return { data: data };
 });
