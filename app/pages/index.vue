@@ -45,7 +45,7 @@ async function cardAction(action: string) {
       await user.supabase.auth.signOut();
       await navigateTo("/login");
       break;
-    default:
+    case "settings":
       break;
   }
 }

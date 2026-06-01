@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-col max-w-lg border-double border-8 border-card-border ring-4 ring-card-ring ring-inset bg-card text-card-foreground shadow-transparent-lg"
+    class="flex flex-col border-double border-8 border-card-border ring-4 ring-card-ring ring-inset bg-card text-card-foreground shadow-transparent-lg"
   >
     <slot />
   </div>

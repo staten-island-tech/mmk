@@ -13,10 +13,10 @@
       </UiModalSimple>
 
       <div
-        class="flex min-h-screen md:items-center justify-center px-0 md:p-10"
+        class="flex w-full min-h-screen sm:items-center justify-center sm:p-10"
       >
         <UiCardSimple
-          class="w-full h-screen md:h-auto md:max-w-lg p-10 gap-5"
+          class="w-full h-screen sm:h-auto max-w-full sm:max-w-lg p-10 gap-5"
         >
           <h2 class="text-xl font-medium text-slate-500">
             Create a new account

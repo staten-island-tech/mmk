@@ -2,12 +2,12 @@
   <Transition name="backdrop">
     <div
       v-show="open"
-      class="z-50 fixed flex justify-center items-center left-0 top-0 w-full h-full bg-black/50"
+      class="z-50 fixed inset-0 flex items-end sm:items-center justify-center font-sans bg-black/50"
     >
       <Transition name="card" appear>
         <div
           v-if="open"
-          class="relative flex flex-col gap-5 p-8 w-full max-w-xl border-solid border-4 border-card-border bg-card text-card-foreground"
+          class="relative flex flex-col gap-5 p-8 w-full max-h-xl sm:max-w-xl border-solid sm:border-4 border-card-border rounded-t-2xl sm:rounded-none bg-card text-card-foreground"
         >
           <Icon
             name="pixelarticons:close"
@@ -19,24 +19,24 @@
           <h1 class="text-2xl font-semibold">{{ title }}</h1>
 
           <!-- Content -->
-          <slot />
+          <div class="flex-1 overflow-y-auto pr-1">
+            <slot />
+          </div>
 
           <!-- Button row -->
-          <div v-if="props.buttons" class="flex flex-row-reverse gap-5">
+          <div v-if="props.buttons?.length" class="flex flex-row-reverse gap-5">
             <template v-for="button in props.buttons" :key="button.label">
-              <!-- Primary button -->
-              <ButtonPrimary
+              <UiButtonSimplePrimary
                 v-if="button.priority === 1"
                 :label="button.label"
-                class="min-w-24"
+                class="min-w-24 max-w-32"
                 @click="button.callback"
               />
 
-              <!-- Secondary button -->
-              <ButtonSecondary
+              <UiButtonSimpleSecondary
                 v-else-if="button.priority === 2"
                 :label="button.label"
-                class="min-w-24"
+                class="min-w-24 max-w-32"
                 @click="button.callback"
               />
             </template>
@@ -66,19 +66,31 @@ const emit = defineEmits<{
 .backdrop-leave-active {
   transition: opacity 0.2s ease;
 }
+
 .backdrop-enter-from,
 .backdrop-leave-to {
   opacity: 0;
 }
 
-.card-enter-active {
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
+.card-enter-active,
 .card-leave-active {
-  transition: transform 0.2s ease-in;
+  transition: transform 0.25s ease;
 }
+
 .card-enter-from,
 .card-leave-to {
-  transform: scale(0.85);
+  transform: translateY(100%);
+}
+
+@media (min-width: 640px) {
+  .card-enter-active,
+  .card-leave-active {
+    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .card-enter-from,
+  .card-leave-to {
+    transform: scale(0.85);
+  }
 }
 </style>
