@@ -9,7 +9,7 @@
 <style>
 .default-enter-active,
 .default-leave-active {
-  transition: all 0.5s ease-in;
+  transition: all 0.25s ease-in;
 }
 
 .default-enter-from {
