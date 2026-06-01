@@ -4940,10 +4940,10 @@ CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXEC
 
 
 --
--- Name: matchmaking_queue trigger_matchmaking; Type: TRIGGER; Schema: public; Owner: supabase_admin
+-- Name: matchmaking_heartbeats trigger_matchmaking; Type: TRIGGER; Schema: public; Owner: supabase_admin
 --
 
-CREATE TRIGGER trigger_matchmaking AFTER INSERT ON public.matchmaking_queue FOR EACH ROW EXECUTE FUNCTION supabase_functions.http_request('https://YOUR_SUPABASE_URL/functions/v1/matchmaking', 'POST', '{"Content-type":"application/json","Authorization":"Bearer YOUR_ANON_KEY"}', '{}', '5000');
+CREATE TRIGGER trigger_matchmaking AFTER INSERT OR UPDATE ON public.matchmaking_heartbeats FOR EACH ROW EXECUTE FUNCTION supabase_functions.http_request('https://YOUR_SUPABASE_URL/functions/v1/matchmaking', 'POST', '{"Content-type":"application/json","Authorization":"Bearer YOUR_ANON_KEY"}', '{}', '5000');
 
 
 --
@@ -5154,7 +5154,7 @@ ALTER TABLE ONLY public.matchmaking_heartbeats
 --
 
 ALTER TABLE ONLY public.matchmaking_heartbeats
-    ADD CONSTRAINT matchmaking_heartbeats_uid_fkey1 FOREIGN KEY (uid) REFERENCES public.matchmaking_queue(uid) ON DELETE CASCADE;
+    ADD CONSTRAINT matchmaking_heartbeats_uid_fkey1 FOREIGN KEY (uid) REFERENCES public.matchmaking_queue(uid) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
 
 
 --
