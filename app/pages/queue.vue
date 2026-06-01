@@ -31,18 +31,21 @@ let channel: ReturnType<typeof user.supabase.channel> | null = null;
 async function heartbeat() {
   if (!user.data?.sub) return;
 
-  const { data: queueRow } = await user.supabase
-    .from("matchmaking_queue")
-    .select("uid")
-    .eq("uid", user.data.sub)
-    .single();
+  if (!channel) {
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+    }
+    return;
+  }
 
-  if (queueRow) {
-    await user.supabase.from("matchmaking_heartbeats").upsert({
+  await user.supabase.from("matchmaking_heartbeats").upsert(
+    {
       uid: user.data.sub,
       last_heartbeat: new Date().toISOString(),
-    });
-  }
+    },
+    { onConflict: "uid" },
+  );
 }
 
 async function joinQueue() {
@@ -72,6 +75,15 @@ async function joinQueue() {
     )
     .subscribe();
 
+  // Send heartbeat
+  await user.supabase.from("matchmaking_heartbeats").upsert(
+    {
+      uid: user.data?.sub,
+      last_heartbeat: new Date().toISOString(),
+    },
+    { onConflict: "uid" },
+  );
+
   // Add the user to the queue
   await user.supabase.from("matchmaking_queue").insert({
     uid: user.data?.sub,
@@ -79,7 +91,6 @@ async function joinQueue() {
   });
 
   // Every 5 seconds, ping the "matchmaking_heartbeats" table to confirm that the user is still in the queue
-  heartbeat();
   heartbeatInterval = setInterval(heartbeat, 5000);
 
   window.addEventListener("beforeunload", handleUnload); // when tab is closed (etc.)

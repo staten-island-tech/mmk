@@ -29,14 +29,14 @@
               <UiButtonSimplePrimary
                 v-if="button.priority === 1"
                 :label="button.label"
-                class="min-w-24 max-w-32"
+                class="min-w-24 sm:max-w-32"
                 @click="button.callback"
               />
 
               <UiButtonSimpleSecondary
                 v-else-if="button.priority === 2"
                 :label="button.label"
-                class="min-w-24 max-w-32"
+                class="min-w-24 sm:max-w-32"
                 @click="button.callback"
               />
             </template>
