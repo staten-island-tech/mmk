@@ -1,0 +1,15 @@
+jobid,schedule,command,nodename,nodeport,database,username,active,jobname
+1,* * * * *,"
+  delete from matchmaking_heartbeats
+  where last_heartbeat < now() - interval '15 seconds';
+
+  delete from matchmaking_queue
+  where uid in (
+    select q.uid 
+    from matchmaking_queue q
+    left join matchmaking_heartbeats h on h.uid = q.uid
+    where h.uid is null 
+    or h.last_heartbeat < now() - interval '15 seconds'
+  )
+  and status = 'waiting';
+  ",localhost,5432,postgres,supabase_admin,true,cleanup-stale-queue

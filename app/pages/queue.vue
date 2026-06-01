@@ -28,6 +28,23 @@ const user = useUserStore();
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 let channel: ReturnType<typeof user.supabase.channel> | null = null;
 
+async function heartbeat() {
+  if (!user.data?.sub) return;
+
+  const { data: queueRow } = await user.supabase
+    .from("matchmaking_queue")
+    .select("uid")
+    .eq("uid", user.data.sub)
+    .single();
+
+  if (queueRow) {
+    await user.supabase.from("matchmaking_heartbeats").upsert({
+      uid: user.data.sub,
+      last_heartbeat: new Date().toISOString(),
+    });
+  }
+}
+
 async function joinQueue() {
   channel = user.supabase.channel("queue-entry"); // realtime connection
 
@@ -45,7 +62,8 @@ async function joinQueue() {
         table: "matchmaking_queue",
         filter: `uid=eq.${user.data?.sub}`,
       },
-      (payload: any) => {
+      (payload) => {
+        // Enter match
         if (payload.new.status === "matched") {
           leaveQueue(false);
           navigateTo(`/game/${payload.new.match_id}`);
@@ -61,12 +79,8 @@ async function joinQueue() {
   });
 
   // Every 5 seconds, ping the "matchmaking_heartbeats" table to confirm that the user is still in the queue
-  heartbeatInterval = setInterval(async () => {
-    await user.supabase.from("matchmaking_heartbeats").upsert({
-      uid: user.data?.sub,
-      last_heartbeat: new Date().toISOString(),
-    });
-  }, 5000);
+  heartbeat();
+  heartbeatInterval = setInterval(heartbeat, 5000);
 
   window.addEventListener("beforeunload", handleUnload); // when tab is closed (etc.)
 }

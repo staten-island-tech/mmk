@@ -21,9 +21,18 @@ To host MMK, you must have the following backend services running on a server:
 1. [Supabase](https://supabase.com), an open-source PostgreSQL development platform.
 
 > [!IMPORTANT]
-> You must set up your Supabase project in a specific way for MMK to work properly. Import the [schema](supabase-schema.sql) to instantly configure your PostgreSQL server.
+> You must set up your Supabase project in a specific way for MMK to work properly. See the [Supabase Setup](#supabase-setup) section to learn more.
 
 2. [MMK Panel](https://github.com/v81d/mmk-panel), the official Django-based administration panel for MMK.
+
+#### Supabase Setup
+
+To reproduce MMK's official Supabase setup, do the following:
+
+1. Import the [schema](supabase/schema.sql) to instantly configure your PostgreSQL server.
+2. In the schema, find the query that creates the trigger `trigger_matchmaking` and replace the following placeholders: `YOUR_SUPABASE_URL` with your Supabase instance URL and `YOUR_ANON_KEY` with your anon key.
+3. Add the [cron jobs](supabase/cron-jobs.csv) to your project.
+4. Finally, deploy the necessary [edge functions](supabase/edge-functions) into your Supabase dashboard.
 
 ### Environment Variables
 
