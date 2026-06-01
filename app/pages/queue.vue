@@ -17,17 +17,108 @@
       <h2 class="text-xl md:text-2xl tracking-wider text-blue-200">
         Searching for a worthy opponent<span class="dots"></span>
       </h2>
-      <UiButtonSimpleAccent
-        label="Cancel"
-        class="w-36"
-        @click="navigateTo('/')"
-      />
+      <UiButtonSimpleAccent label="Cancel" class="w-36" @click="handleCancel" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-const user = useSupabaseUser();
+const user = useUserStore();
+
+let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+let channel: ReturnType<typeof user.supabase.channel> | null = null;
+
+async function joinQueue() {
+  channel = user.supabase.channel("queue-entry"); // realtime connection
+
+  /* Watch for updates to the user's row in the "matchmaking_queue" table.
+   * When it gets updated, check if the new row status says "matched."
+   * If so, leave the queue without deleting the row and navigate to the game.
+   * This is all done before adding the user to the queue to avoid getting matched before listening.
+   */
+  channel
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "matchmaking_queue",
+        filter: `uid=eq.${user.data?.sub}`,
+      },
+      (payload: any) => {
+        if (payload.new.status === "matched") {
+          leaveQueue(false);
+          navigateTo(`/game/${payload.new.match_id}`);
+        }
+      },
+    )
+    .subscribe();
+
+  // Add the user to the queue
+  await user.supabase.from("matchmaking_queue").insert({
+    uid: user.data?.sub,
+    rank: user.rank,
+  });
+
+  // Every 5 seconds, ping the "matchmaking_heartbeats" table to confirm that the user is still in the queue
+  heartbeatInterval = setInterval(async () => {
+    await user.supabase.from("matchmaking_heartbeats").upsert({
+      uid: user.data?.sub,
+      last_heartbeat: new Date().toISOString(),
+    });
+  }, 5000);
+
+  window.addEventListener("beforeunload", handleUnload); // when tab is closed (etc.)
+}
+
+async function leaveQueue(deleteRow = true) {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+
+  if (channel) {
+    channel.unsubscribe();
+    channel = null;
+  }
+
+  window.removeEventListener("beforeunload", handleUnload);
+
+  if (deleteRow && user.data?.sub) {
+    await user.supabase
+      .from("matchmaking_queue")
+      .delete()
+      .eq("uid", user.data?.sub);
+  }
+}
+
+function handleUnload() {
+  // Beacons get completed even if the page dies
+  navigator.sendBeacon(
+    "/api/queue/leave",
+    new Blob(
+      [
+        JSON.stringify({
+          uid: user.data?.sub,
+        }),
+      ],
+      { type: "application/json" },
+    ),
+  );
+}
+
+async function handleCancel() {
+  await leaveQueue();
+  navigateTo("/");
+}
+
+onMounted(() => {
+  joinQueue();
+});
+
+onUnmounted(() => {
+  leaveQueue();
+});
 </script>
 
 <style scoped>
@@ -84,3 +175,49 @@ const user = useSupabaseUser();
   }
 }
 </style>
+
+<!--
+                      ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⠀⠀⠀⣾⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠈⣿⣿⣿⣿⣿⣿⠟⠉⠀⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀⠙⢻⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀⣠⣄⠀⢻⣿⣿⣿⣿⣿⡿⠀⣠⣄⠀⠀⠀⢻⣿⣿⣏⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⣾⣿⣿⣿⣿⠀⠀⠀⠀⠰⣿⣿⠀⢸⣿⣿⣿⣿⣿⡇⠀⣿⣿⡇⠀⠀⢸⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣄⠀⠀⠀⠀⠙⠃⠀⣼⣿⣿⣿⣿⣿⣇⠀⠙⠛⠁⠀⠀⣼⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣷⣤⣄⣀⣠⣤⣾⣿⣿⣿⣿⣿⣿⣿⣦⣄⣀⣀⣤⣾⣿⣿⣿⣿⠃⠀⠀⢀⣀⠀⠀
+                      ⠰⡶⠶⠶⠶⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⠛⠉⠉⠙⠛⠋⠀
+                      ⠀⠀⢀⣀⣠⣤⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠷⠶⠶⠶⢤⣤⣀⠀
+                      ⠀⠛⠋⠉⠁⠀⣀⣴⡿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣯⣤⣀⡀⠀⠀⠀⠀⠘⠃
+                      ⠀⠀⢀⣤⡶⠟⠉⠁⠀⠀⠉⠛⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠟⠉⠀⠀⠀⠉⠙⠳⠶⣄⡀⠀⠀
+                      ⠀⠀⠙⠁⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠁⠀⠀
+                      ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⠀⠀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                      ⠀⠀⠀⠀⣸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+
+              ▄████▄ █████▄ ▄█████ ▄████▄ ██     ██  ██ ██████ ██████ 
+              ██▄▄██ ██▄▄██ ▀▀▀▄▄▄ ██  ██ ██     ██  ██   ██   ██▄▄   
+              ██  ██ ██▄▄█▀ █████▀ ▀████▀ ██████ ▀████▀   ██   ██▄▄▄▄ 
+                                                        
+⠀⠀⠀⠀⠀⠀⣠⣴⣾⣿⣿⣿⣶⣦⣄⠀⠀⠀⢰⣶⣶⡆⠀⠀⣶⣶⣶⣄⠀⠀⠀⠀⠀⣶⣶⡆⠀⠀⢰⣶⣶⣶⣶⣶⣶⣶⣶⣶⡆⠀⠀⣶⣶⣶⣶⡄⠀⠀⠀⠀⢰⣶⣶⣶⣶⠀⠀⠀⠀⠀⠀⢀⣶⣶⣶⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⢀⣼⣿⡿⠉⠀⠀⠈⠙⢿⣿⣧⠀⠀⢸⣿⣿⡇⠀⠀⣿⣿⣿⣿⣆⠀⠀⠀⠀⣿⣿⡇⠀⠀⢸⣿⣿⠉⠉⠉⠉⠉⠉⠉⠁⠀⠀⣿⣿⡟⣿⣷⠀⠀⠀⠀⣾⣿⢻⣿⣿⠀⠀⠀⠀⠀⠀⣼⣿⠏⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⣼⣿⣿⠀⠀⠀⠀⠀⠀⠘⠛⠛⠃⠀⢸⣿⣿⡇⠀⠀⣿⣿⡇⠹⣿⣦⠀⠀⠀⣿⣿⡇⠀⠀⢸⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⡇⢹⣿⡆⠀⠀⢰⣿⡏⢸⣿⣿⠀⠀⠀⠀⠀⣸⣿⡟⠀⢹⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⡇⠀⠀⣿⣿⡇⠀⠹⣿⣧⡀⠀⣿⣿⡇⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⣿⣿⡇⠀⣿⣿⠀⠀⣾⣿⠁⢸⣿⣿⠀⠀⠀⠀⢠⣿⣿⠃⠀⠈⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⢿⣿⣷⠀⠀⠀⠀⠀⠀⢀⣀⣀⡀⠀⢸⣿⣿⡇⠀⠀⣿⣿⡇⠀⠀⠘⣿⣷⡀⣿⣿⡇  ⢸⣿⣿   ⠀⠀⠀⠀⠀⠀⠀⣿⣿⡇⠀⠸⣿⡇⢠⣿⡏⠀⢸⣿⣿⠀⠀⠀⠀⣾⣿⣯⣤⣤⣤⣼⣿⣿⡀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠘⢿⣿⣧⣀⠀⠀⠀⣀⣼⣿⡟⠀⠀⢸⣿⣿⡇⠀⠀⣿⣿⡇⠀⠀⠀⠘⢿⣿⣿⣿⡇  ⢸⣿⣿⣀⣀⣀⣀⣀⣀⣀⡀⠀⠀⣿⣿⡇⠀⠀⢿⣷⣾⣿⠁⠀⢸⣿⣿⠀⠀⠀⣸⣿⡿⠻⠿⠿⠿⠿⢿⣿⣷⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠈⠛⢿⣿⣿⣿⣿⣿⠿⠋⠀⠀⠀⢸⣿⣿⠇⠀⠀⣿⣿⡇⠀⠀⠀⠀⠈⢿⣿⣿⡇  ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⣿⣿⡇⠀⠀⠘⣿⣿⡏⠀⠀⢸⣿⣿⠀⠀⢰⣿⣿⠇⠀⠀⠀⠀⠀⠘⣿⣿⣇⠀⠀⠀⠀⠀
+-->

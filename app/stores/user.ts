@@ -1,7 +1,8 @@
+import type { Database } from "~/types/database.types";
 import type { UserStats, UserCardSimple } from "~/types/user";
 
 export const useUserStore = defineStore("user", () => {
-  const supabase = useSupabaseClient();
+  const supabase = useSupabaseClient<Database>();
   const data = useSupabaseUser();
 
   /** The number of wins the user has. (int32) */
