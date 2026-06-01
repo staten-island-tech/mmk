@@ -12,8 +12,12 @@
         {{ dialogMessage }}
       </UiModalSimple>
 
-      <div class="flex justify-center items-center p-32 w-screen h-screen">
-        <UiCardSimple class="p-10 gap-5 w-full">
+      <div
+        class="flex min-h-screen md:items-center justify-center px-0 md:p-10"
+      >
+        <UiCardSimple
+          class="w-full h-screen md:h-auto md:max-w-lg p-10 gap-5"
+        >
           <h2 class="text-xl font-medium text-slate-500">
             Create a new account
           </h2>
