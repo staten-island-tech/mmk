@@ -1,6 +1,5 @@
 import * as z from "zod";
 import { serverSupabaseServiceRole } from "#supabase/server";
-
 import type { Database } from "~/types/database.types";
 
 const LeaveSchema = z.object({

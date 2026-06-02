@@ -1,28 +1,33 @@
-/** User stats schema. */
-export interface UserStats {
-  /** The user ID. */
-  readonly uid: string;
-  /** The number of wins the user has. */
-  readonly wins: number;
-  /** The number of games the user has played. */
-  readonly games: number;
-  /** The array of card IDs the user owns. */
-  readonly cards: UserCardSimple[];
-}
+import * as z from "zod";
 
 /** Simplified user card schema. */
-export interface UserCardSimple {
+export const UserCardSimpleSchema = z.object({
   /** The card ID. */
-  readonly id: number;
+  id: z.number(),
   /** The card's move IDs. */
-  readonly moveIds: number[];
+  moveIds: z.array(z.number()),
   /** The card rarity. */
-  readonly rarity: {
+  rarity: z.object({
     /** The rarity ID. */
-    readonly id: number;
+    id: z.number(),
     /** The rarity weight/order. */
-    readonly weight: number;
+    weight: z.number(),
     /** The rarity name. */
-    readonly name: string;
-  };
-}
+    name: z.string(),
+  }),
+});
+
+/** User stats schema. */
+export const UserStatsSchema = z.object({
+  /** The user ID. */
+  uid: z.string(),
+  /** The number of wins the user has. */
+  wins: z.number(),
+  /** The number of games the user has played. */
+  games: z.number(),
+  /** The array of card IDs the user owns. */
+  cards: z.array(UserCardSimpleSchema),
+});
+
+export type UserCardSimple = z.infer<typeof UserCardSimpleSchema>;
+export type UserStats = z.infer<typeof UserStatsSchema>;

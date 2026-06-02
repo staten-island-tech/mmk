@@ -1,94 +1,101 @@
+import * as z from "zod";
+
 /** Rarity schema. */
-export interface Rarity {
+export const RaritySchema = z.object({
   /** The rarity ID. */
-  readonly id: number;
+  id: z.number(),
   /** The rarity weight/order. */
-  readonly weight: number;
+  weight: z.number(),
   /** The rarity name. */
-  readonly name: string;
+  name: z.string(),
   /** The rarity plate color as a hex string. */
-  readonly plateColor: string;
+  plateColor: z.string(),
   /** The desperation constant. */
-  readonly desperationConstant: number;
-}
+  desperationConstant: z.number(),
+});
 
 /** Move schema. */
-export interface Move {
+export const MoveSchema = z.object({
   /** The move ID. */
-  readonly id: number;
+  id: z.number(),
   /** The move name. */
-  readonly name: string;
+  name: z.string(),
   /** The move cost. */
-  readonly cost: number | null;
+  cost: z.number().nullable(),
   /** The move damage. */
-  readonly damage: number | null;
+  damage: z.number().nullable(),
 
   // Self properties
-  readonly selfDefenseMultiplier: [number, number] | null;
-  readonly selfAttackMultiplier: [number, number] | null;
-  readonly selfMoveEnergyMultiplier: [number, number] | null;
-  readonly selfMoveEnergyGainMultiplier: [number, number] | null;
-  readonly selfDesperationMultiplier: [number, number] | null;
-  readonly selfDefenseScalarBoost: [number, number] | null;
-  readonly selfAttackScalarBoost: [number, number] | null;
-  readonly selfMoveEnergyScalarBoost: [number, number] | null;
-  readonly selfMoveEnergyGainScalarBoost: [number, number] | null;
-  readonly selfPoison: [number, number] | null;
-  readonly selfPreventMove: number | null;
-  readonly selfCustomDialogue: string | null;
+  selfDefenseMultiplier: z.tuple([z.number(), z.number()]).nullable(),
+  selfAttackMultiplier: z.tuple([z.number(), z.number()]).nullable(),
+  selfMoveEnergyMultiplier: z.tuple([z.number(), z.number()]).nullable(),
+  selfMoveEnergyGainMultiplier: z.tuple([z.number(), z.number()]).nullable(),
+  selfDesperationMultiplier: z.tuple([z.number(), z.number()]).nullable(),
+  selfDefenseScalarBoost: z.tuple([z.number(), z.number()]).nullable(),
+  selfAttackScalarBoost: z.tuple([z.number(), z.number()]).nullable(),
+  selfMoveEnergyScalarBoost: z.tuple([z.number(), z.number()]).nullable(),
+  selfMoveEnergyGainScalarBoost: z.tuple([z.number(), z.number()]).nullable(),
+  selfPoison: z.tuple([z.number(), z.number()]).nullable(),
+  selfPreventMove: z.number().nullable(),
+  selfCustomDialogue: z.string().nullable(),
 
   // Enemy properties
-  readonly enemyDefenseMultiplier: [number, number] | null;
-  readonly enemyAttackMultiplier: [number, number] | null;
-  readonly enemyMoveEnergyMultiplier: [number, number] | null;
-  readonly enemyMoveEnergyGainMultiplier: [number, number] | null;
-  readonly enemyDesperationMultiplier: [number, number] | null;
-  readonly enemyDefenseScalarBoost: [number, number] | null;
-  readonly enemyAttackScalarBoost: [number, number] | null;
-  readonly enemyMoveEnergyScalarBoost: [number, number] | null;
-  readonly enemyMoveEnergyGainScalarBoost: [number, number] | null;
-  readonly enemyDesperationScalarBoost: [number, number] | null;
-  readonly enemyPoison: [number, number] | null;
-  readonly enemyPreventMove: number | null;
-  readonly enemyCustomDialogue: string | null;
-}
+  enemyDefenseMultiplier: z.tuple([z.number(), z.number()]).nullable(),
+  enemyAttackMultiplier: z.tuple([z.number(), z.number()]).nullable(),
+  enemyMoveEnergyMultiplier: z.tuple([z.number(), z.number()]).nullable(),
+  enemyMoveEnergyGainMultiplier: z.tuple([z.number(), z.number()]).nullable(),
+  enemyDesperationMultiplier: z.tuple([z.number(), z.number()]).nullable(),
+  enemyDefenseScalarBoost: z.tuple([z.number(), z.number()]).nullable(),
+  enemyAttackScalarBoost: z.tuple([z.number(), z.number()]).nullable(),
+  enemyMoveEnergyScalarBoost: z.tuple([z.number(), z.number()]).nullable(),
+  enemyMoveEnergyGainScalarBoost: z.tuple([z.number(), z.number()]).nullable(),
+  enemyDesperationScalarBoost: z.tuple([z.number(), z.number()]).nullable(),
+  enemyPoison: z.tuple([z.number(), z.number()]).nullable(),
+  enemyPreventMove: z.number().nullable(),
+  enemyCustomDialogue: z.string().nullable(),
+});
 
 /** Card move schema. */
-export interface CardMove {
+export const CardMoveSchema = z.object({
   /** The card move ID. */
-  readonly id: number;
+  id: z.number(),
   /** The associated move. */
-  readonly move: Move;
+  move: MoveSchema,
   /** The card move sprite URL, or null if using the card's default sprite. */
-  readonly sprite: string | null;
-}
+  sprite: z.string().nullable(),
+});
 
 /** Card schema. */
-export interface Card {
+export const CardSchema = z.object({
   /** The card ID. */
-  readonly id: number;
+  id: z.number(),
   /** The card name. */
-  readonly name: string;
+  name: z.string(),
   /** The card nickname. */
-  readonly nickname: string;
+  nickname: z.string(),
   /** The card description. */
-  readonly description: string;
+  description: z.string(),
   /** The card default sprite URL. */
-  readonly defaultSprite: string;
+  defaultSprite: z.string(),
   /** The card audio URL, or null if no audio. */
-  readonly audio: string | null;
+  audio: z.string().nullable(),
   /** The card rarity. */
-  readonly rarity: Rarity;
+  rarity: RaritySchema,
   /** The card health. */
-  readonly health: number;
+  health: z.number(),
   /** The card defense. */
-  readonly defense: number;
+  defense: z.number(),
   /** The card base move energy. */
-  readonly baseMoveEnergy: number;
+  baseMoveEnergy: z.number(),
   /** The card base move energy gain. */
-  readonly baseMoveEnergyGain: number;
+  baseMoveEnergyGain: z.number(),
   /** The card desperation threshold. */
-  readonly desperation: number;
+  desperation: z.number(),
   /** The card moves. */
-  readonly moves: CardMove[];
-}
+  moves: z.array(CardMoveSchema),
+});
+
+export type Rarity = z.infer<typeof RaritySchema>;
+export type Move = z.infer<typeof MoveSchema>;
+export type CardMove = z.infer<typeof CardMoveSchema>;
+export type Card = z.infer<typeof CardSchema>;

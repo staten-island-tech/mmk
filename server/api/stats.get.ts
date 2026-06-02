@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
 
   if (!user)
-    throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
+    throw createError({ statusCode: 401, statusMessage: "Unauthorized." });
 
   const supabase = serverSupabaseServiceRole<Database>(event);
 
@@ -21,5 +21,5 @@ export default defineEventHandler(async (event) => {
   if (error)
     throw createError({ statusCode: 500, statusMessage: error.message });
 
-  return { data: data };
+  return { success: true, data: data };
 });
