@@ -343,8 +343,9 @@ function compile(gl: WebGLRenderingContext, type: number, src: string) {
 
 function buildGL(canvas: HTMLCanvasElement, frag: string): GLContext | null {
   const gl = canvas.getContext("webgl", {
-    antialias: true,
+    antialias: false,
     alpha: false,
+    powerPreference: "low-power",
   });
 
   if (!gl) return null;
