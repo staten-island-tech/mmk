@@ -25,7 +25,7 @@ export const useUserStore = defineStore("user", () => {
       ? cards.value.reduce((a, b) =>
           a.rarity.weight > b.rarity.weight ? a : b,
         ).rarity.name
-      : "Grade I",
+      : "Grade IV",
   );
 
   async function fetchStats() {

@@ -15,7 +15,7 @@
         ><span class="px-2 text-blue-300 rounded-r-lg bg-blue-800">making</span>
       </h1>
       <h2 class="text-xl md:text-2xl tracking-wider text-blue-200">
-        Searching for a worthy opponent<span class="dots"></span>
+        Searching for a unworthy opponent<span class="dots"></span>
       </h2>
       <UiButtonSimpleAccent
         label="Cancel"
