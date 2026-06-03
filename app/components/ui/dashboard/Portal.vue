@@ -384,8 +384,20 @@ let ro: ResizeObserver | null = null;
 
 const start = performance.now();
 
-function render() {
+let lastFrameTime = 0;
+const RENDER_FPS = 20;
+
+function render(timestamp: number) {
   if (!glCtx) return;
+
+  const interval = 1000 / RENDER_FPS;
+
+  if (timestamp - lastFrameTime < interval) {
+    raf = requestAnimationFrame(render);
+    return;
+  }
+
+  lastFrameTime = timestamp;
 
   const { gl, uT, uR, uH } = glCtx;
 
@@ -422,7 +434,7 @@ onMounted(async () => {
   const frag = SHADERS[props.config.shader ?? 0] ?? SHADERS[0]!;
 
   glCtx = buildGL(canvas, frag);
-  render();
+  render(lastFrameTime);
 });
 
 onBeforeUnmount(() => {
