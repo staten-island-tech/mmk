@@ -39,7 +39,7 @@
 
       <!-- P2 stat panel — top-left -->
       <div class="absolute top-5 left-6 z-10 w-56">
-        <PokemonStatPanel
+        <UiGameplayCardDisplay
           :card="p2Card"
           :state="p2State"
           :is-active="currentPlayer === 1 && battleState === 'player_turn'"
@@ -50,7 +50,7 @@
 
       <!-- P1 stat panel — bottom-right -->
       <div class="absolute bottom-20 right-6 z-10 w-56">
-        <PokemonStatPanel
+        <UiGamePlayCardDisplay
           :card="p1Card"
           :state="p1State"
           :is-active="currentPlayer === 0 && battleState === 'player_turn'"
