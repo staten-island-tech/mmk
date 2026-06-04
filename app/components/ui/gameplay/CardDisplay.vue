@@ -1,92 +1,110 @@
 <template>
-  <div
-    class="flex flex-col gap-3 p-4 border border-white/10 bg-black/40 backdrop-blur-sm transition-all duration-300"
-    :class="[isActive ? (accent === 'p1' ? 'border-p1-accent/60 shadow-p1' : 'border-p2-accent/60 shadow-p2') : 'border-white/5']"
-  >
+  <UiCardSimple class="!gap-0 !p-0 !w-96 h-96 !ring-0">
     <!-- Player label -->
-    <div class="flex items-center gap-2" :class="flip ? 'flex-row-reverse' : ''">
-      <span
-        class="font-mono text-xs tracking-[0.3em] uppercase"
-        :class="accent === 'p1' ? 'text-p1-accent' : 'text-p2-accent'"
-      >{{ playerLabel }}</span>
-      <div class="h-px flex-1 bg-white/10" />
-      <span class="font-mono text-xs text-white/30">{{ card.rarity.name }}</span>
+    <div
+      class="flex justify-center items-center gap-5 p-2 border-b-2 text-xl font-semibold tracking-wider"
+      :class="
+        accent === 1
+          ? 'text-game-p1-accent border-game-p1-light bg-game-p1-light/10'
+          : 'text-game-p2-accent border-game-p2-light bg-game-p2-light/10'
+      "
+    >
+      {{ props.playerLabel }}
     </div>
-
-    <!-- Sprite + name -->
-    <div class="flex items-center gap-3" :class="flip ? 'flex-row-reverse' : ''">
-      <div class="w-16 h-16 shrink-0 border border-white/10 overflow-hidden bg-black/30">
-        <img :src="card.defaultSprite" :alt="card.name" class="w-full h-full object-cover" />
+    <!-- Details -->
+    <div
+      class="flex items-center gap-3 p-5 border-b-2 border-slate-400 bg-slate-200"
+      :class="flip ? 'flex-row-reverse' : ''"
+    >
+      <div
+        class="w-16 h-16 shrink-0 border border-white/10 overflow-hidden bg-black/30"
+      >
+        <img :src="card.defaultSprite" class="w-full h-full object-cover" />
       </div>
       <div :class="flip ? 'text-right' : 'text-left'">
-        <p class="font-display text-lg leading-tight text-white">{{ card.name }}</p>
-        <p class="font-mono text-xs text-white/40 italic">{{ card.nickname }}</p>
+        <p class="text-lg tracking-wide leading-tight font-bold">
+          {{ card.name }}
+        </p>
+        <p class="text-sm italic">
+          {{ card.nickname }}
+        </p>
+        <p class="text-sm uppercase">{{ card.rarity.name }}</p>
       </div>
     </div>
+    <div class="flex flex-col gap-3 m-1 p-2 h-full ring-4 ring-card-ring">
+      <!-- Health bar -->
+      <div class="flex flex-col gap-1">
+        <div class="flex justify-between text-xs">
+          <span>Health</span>
+          <span>{{ Math.ceil(state.hp) }} / {{ state.maxHp }}</span>
+        </div>
+        <div class="h-2 w-full bg-slate-300 overflow-hidden">
+          <div
+            class="h-full transition-all duration-500 bg-violet-400"
+            :style="{ width: hpPercent + '%' }"
+          />
+        </div>
+      </div>
 
-    <!-- HP Bar -->
-    <div class="flex flex-col gap-1">
-      <div class="flex justify-between font-mono text-xs">
-        <span class="text-white/50">HP</span>
-        <span class="text-white/70">{{ Math.ceil(state.hp) }} / {{ state.maxHp }}</span>
+      <!-- Energy bar -->
+      <div class="flex flex-col gap-1">
+        <div class="flex justify-between text-xs">
+          <span>Energy</span>
+          <span
+            >{{ Math.floor(state.moveEnergy) }} /
+            {{ state.maxMoveEnergy }}</span
+          >
+        </div>
+        <div class="h-2 w-full bg-slate-300 overflow-hidden">
+          <div
+            class="h-full transition-all duration-500 bg-orange-400"
+            :style="{ width: energyPercent + '%' }"
+          />
+        </div>
       </div>
-      <div class="h-2 w-full bg-white/10 overflow-hidden">
-        <div
-          class="h-full transition-all duration-500"
-          :style="{ width: hpPct + '%', backgroundColor: hpColor }"
-        />
-      </div>
-    </div>
 
-    <!-- Energy Bar -->
-    <div class="flex flex-col gap-1">
-      <div class="flex justify-between font-mono text-xs">
-        <span class="text-white/50">Energy</span>
-        <span class="text-white/70">{{ Math.floor(state.moveEnergy) }} / {{ state.maxMoveEnergy }}</span>
-      </div>
-      <div class="h-1.5 w-full bg-white/10 overflow-hidden">
-        <div
-          class="h-full transition-all duration-500"
-          :class="accent === 'p1' ? 'bg-p1-accent/80' : 'bg-p2-accent/80'"
-          :style="{ width: energyPct + '%' }"
-        />
+      <!-- Defense (immutable stat) -->
+      <div
+        class="flex justify-between items-center mt-auto text-xs text-slate-500"
+      >
+        <span class="mr-2 tracking-wide uppercase">Defense</span>
+        <div class="h-px w-full bg-slate-300"></div>
+        <span
+          class="px-2 py-0.5 font-semibold border border-slate-300 bg-slate-200"
+          >{{ state.defense }}</span
+        >
       </div>
     </div>
-
-    <!-- Defense -->
-    <div class="flex justify-between font-mono text-xs text-white/40">
-      <span>DEF</span>
-      <span>{{ state.defense }}</span>
-    </div>
-  </div>
+  </UiCardSimple>
 </template>
-
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { Card } from '~/types/collections'
+import { computed } from "vue";
+import colors from "tailwindcss/colors";
+import type { Card } from "~/types/collection";
 
 interface PlayerState {
-  hp: number
-  maxHp: number
-  moveEnergy: number
-  maxMoveEnergy: number
-  defense: number
+  hp: number;
+  maxHp: number;
+  moveEnergy: number;
+  maxMoveEnergy: number;
+  defense: number;
 }
 
 const props = defineProps<{
-  card: Card
-  state: PlayerState
-  isActive?: boolean
-  playerLabel: string
-  accent: 'p1' | 'p2'
-  flip?: boolean
-}>()
+  card: Card;
+  state: PlayerState;
+  isActive?: boolean;
+  playerLabel: string;
+  accent: 1 | 2;
+  flip?: boolean;
+}>();
 
-const hpPct = computed(() => Math.max(0, (props.state.hp / props.state.maxHp) * 100))
-const energyPct = computed(() => Math.max(0, (props.state.moveEnergy / props.state.maxMoveEnergy) * 100))
-const hpColor = computed(() => {
-  if (hpPct.value > 50) return props.accent === 'p1' ? '#f59e0b' : '#a78bfa'
-  if (hpPct.value > 25) return '#f97316'
-  return '#ef4444'
-})
+const hpPercent = computed(() =>
+  Math.max(0, (props.state.hp / props.state.maxHp) * 100),
+);
+
+const energyPercent = computed(() =>
+  Math.max(0, (props.state.moveEnergy / props.state.maxMoveEnergy) * 100),
+);
 </script>
+<style scoped></style>
