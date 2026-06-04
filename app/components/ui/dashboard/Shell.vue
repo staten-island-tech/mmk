@@ -75,9 +75,6 @@ const message = computed<string>(() => {
     "Locked in yet?",
     "Choose a portal!",
     "The battle awaits!",
-    "But would you win?",
-    "Ready?",
-    "Tung Tung Tung Sahur Dating Simulator is also a game u should play",
   ];
   return messages[Math.floor(Math.random() * messages.length)]!;
 });
