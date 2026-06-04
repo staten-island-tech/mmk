@@ -6,7 +6,7 @@ export const useUserStore = defineStore("user", () => {
   const data = useSupabaseUser();
 
   /** The number of wins the user has. (int32) */
-  const wins = ref<number>(0);
+  const wins = ref<number | null>(null);
   /** The number of games the user has played. (int32) */
   const games = ref<number>(0);
   /** The array of card the user owns. (jsonb) */
@@ -16,7 +16,7 @@ export const useUserStore = defineStore("user", () => {
    * The user's rank.
    * Determined by the highest ranking card in the user's collection.
    */
-  const rank = computed<string>(() =>
+  const rank = computed<string | null>(() => {
     /* Find the rarity with the highest desperation constant.
      * The `userCards.value.reduce()` call compares `a` (the accumulator, a.k.a. the last visited card with the highest desperation constant) and `b` (the current card).
      *   - If the desperation constant of `a` is still greater than that of `b` (i.e., `b` is not a possible candidate for the user's rank), return `a` as the same accumulator.
