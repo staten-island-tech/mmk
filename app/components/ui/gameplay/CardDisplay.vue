@@ -17,9 +17,13 @@
       :class="flip ? 'flex-row-reverse' : ''"
     >
       <div
-        class="w-16 h-16 shrink-0 border border-white/10 overflow-hidden bg-black/30"
+        class="overflow-hidden shrink-0 p-2 w-20 h-20 border-4 border-double border-slate-400 bg-slate-300"
       >
-        <img :src="card.defaultSprite" class="w-full h-full object-cover" />
+        <img
+          :src="card.defaultSprite"
+          class="w-full h-full object-cover"
+          :class="flip ? 'scale-x-[-1]' : ''"
+        />
       </div>
       <div :class="flip ? 'text-right' : 'text-left'">
         <p class="text-lg tracking-wide leading-tight font-bold">
@@ -68,7 +72,7 @@
         class="flex justify-between items-center mt-auto text-xs text-slate-500"
       >
         <span class="mr-2 tracking-wide uppercase">Defense</span>
-        <div class="h-px w-full bg-slate-300"></div>
+        <div class="h-px w-full bg-slate-300" />
         <span
           class="px-2 py-0.5 font-semibold border border-slate-300 bg-slate-200"
           >{{ state.defense }}</span
@@ -79,7 +83,6 @@
 </template>
 <script setup lang="ts">
 import { computed } from "vue";
-import colors from "tailwindcss/colors";
 import type { Card } from "~/types/collection";
 
 interface PlayerState {

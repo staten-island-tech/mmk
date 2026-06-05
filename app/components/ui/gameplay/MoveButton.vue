@@ -1,105 +1,52 @@
 <template>
   <button
-    class="move-btn flex flex-col gap-1 p-3 text-left transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed w-full h-full"
-    :class="[accentClass]"
+    class="flex flex-col gap-1 w-full h-full px-4 py-2 text-md text-secondary-foreground border-4 border-double border-secondary-border bg-slate-200 transition-all duration-150 enabled:hover:border-secondary-hover enabled:hover:bg-secondary-hover enabled:hover:text-secondary-hover-foreground enabled:active:bg-secondary-hover enabled:active:border-secondary-hover enabled:active:text-secondary-hover-foreground enabled:active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:border-slate-400 disabled:text-slate-500"
     :disabled="!canAfford"
     @click="handleClick"
   >
-    <div class="flex items-center justify-between w-full gap-2">
-      <span class="move-name">{{ move.move.name }}</span>
-      <span class="move-cost" :class="isFree ? 'free' : ''">
-        {{ isFree ? 'Free' : move.move.cost + ' EP' }}
+    <div class="flex justify-between items-center w-full gap-2 font-semibold">
+      <span class="tracking-wide">{{ move.move.name }}</span>
+      <span class="text-sm font-alt">
+        {{ isFree ? "Free" : move.move.cost + " energy" }}
       </span>
     </div>
-    <div class="move-meta">
-      <span v-if="move.move.damage">DMG {{ move.move.damage }}</span>
-      <span v-if="move.move.selfCustomDialogue || move.move.enemyCustomDialogue" class="move-dialogue-icon">✦</span>
+    <div class="flex gap-1 text-sm tracking-wider">
+      <span v-if="move.move.damage" class="font-alt font-semibold"
+        >{{ move.move.damage }} damage</span
+      >
+      <span v-if="move.move.selfCustomDialogue || move.move.enemyCustomDialogue"
+        >✦</span
+      >
     </div>
   </button>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { CardMove } from '~/types/collections'
+import type { CardMove } from "~/types/collection";
 
 const props = defineProps<{
-  move: CardMove
-  currentEnergy: number
-  accent: 'p1' | 'p2'
-}>()
+  move: CardMove;
+  currentEnergy: number;
+}>();
 
 const emit = defineEmits<{
-  (e: 'select', move: CardMove): void
-}>()
+  (e: "select", move: CardMove): void;
+}>();
 
-const isFree = computed(() => props.move.move.cost === 0 || props.move.move.cost === null)
-const canAfford = computed(() =>
-  isFree.value || (props.move.move.cost !== null && props.currentEnergy >= props.move.move.cost)
-)
-const accentClass = computed(() =>
-  props.accent === 'p1' ? 'accent-p1' : 'accent-p2'
-)
+const isFree = computed(
+  () => props.move.move.cost === 0 || props.move.move.cost === null,
+);
+
+const canAfford = computed(
+  () =>
+    isFree.value ||
+    (props.move.move.cost !== null &&
+      props.currentEnergy >= props.move.move.cost),
+);
 
 function handleClick() {
-  if (canAfford.value) emit('select', props.move)
+  if (canAfford.value) emit("select", props.move);
 }
 </script>
 
-<style scoped>
-.move-btn {
-  background: #0b0b14;
-  border: 1px solid transparent;
-  font-family: 'Share Tech Mono', monospace;
-}
-
-/* P1 amber */
-.accent-p1 {
-  border-color: rgba(245, 158, 11, 0.4);
-  color: #f59e0b;
-}
-.accent-p1:hover:not(:disabled) {
-  border-color: #f59e0b;
-  background: rgba(245, 158, 11, 0.1);
-}
-
-/* P2 violet */
-.accent-p2 {
-  border-color: rgba(167, 139, 250, 0.4);
-  color: #a78bfa;
-}
-.accent-p2:hover:not(:disabled) {
-  border-color: #a78bfa;
-  background: rgba(167, 139, 250, 0.1);
-}
-
-.move-name {
-  font-size: 0.7rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  /* inherit color from accent class */
-}
-
-.move-cost {
-  font-size: 0.7rem;
-  white-space: nowrap;
-  flex-shrink: 0;
-  /* inherit color from accent class */
-}
-.move-cost.free {
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.move-meta {
-  display: flex;
-  gap: 12px;
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.move-dialogue-icon {
-  color: rgba(255, 255, 255, 0.2);
-}
-</style>
+<style scoped></style>
