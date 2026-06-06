@@ -1,31 +1,78 @@
 <template>
   <div class="flex justify-center items-center p-4 w-screen h-screen">
-    <UiBackgroundDomain class="brightness-75" />
-    <div
-      class="z-10 flex flex-col justify-center items-center text-center gap-6"
-    >
-      <Icon
-        name="pixelarticons:search"
-        class="hover w-36 h-36 md:w-40 md:h-40 text-blue-400"
-      />
-      <h1 class="text-4xl md:text-5xl font-bold">
-        <span class="px-2 text-red-300 rounded-l-lg bg-red-800">Match</span
-        ><span class="px-2 text-blue-300 rounded-r-lg bg-blue-800">making</span>
-      </h1>
-      <h2 class="text-xl md:text-2xl tracking-wider text-blue-200">
-        Searching for a worthy opponent<span class="dots"></span>
-      </h2>
-      <UiButtonSimpleAccent label="Cancel" class="w-36" @click="handleCancel" />
+    <UiBackgroundDomain class="-z-10 brightness-75" />
+
+    <div>
+      <UiModalSimple
+        :open="dialogOpen"
+        :title="dialogTitle"
+        :close-button="false"
+        :buttons="dialogButtons"
+        @close="dialogOpen = false"
+      >
+        {{ dialogMessage }}
+      </UiModalSimple>
+
+      <div
+        class="z-10 flex flex-col justify-center items-center text-center gap-6"
+      >
+        <Icon
+          name="pixelarticons:search"
+          class="hover w-36 h-36 md:w-40 md:h-40 text-blue-400"
+        />
+        <h1 class="text-4xl md:text-5xl font-bold">
+          <span class="px-2 text-red-300 rounded-l-lg bg-red-800">Match</span
+          ><span class="px-2 text-blue-300 rounded-r-lg bg-blue-800"
+            >making</span
+          >
+        </h1>
+        <h2 class="text-xl md:text-2xl tracking-wider text-blue-200">
+          Searching for a worthy opponent<span class="dots"></span>
+        </h2>
+        <UiButtonSimpleAccent
+          label="Cancel"
+          class="w-36"
+          @click="handleCancel"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { DialogButton } from "~/types/dialog";
+
 definePageMeta({
   middleware: "authenticated",
 });
 
 const user = useUserStore();
+
+const dialogOpen = ref<boolean>(false);
+const dialogTitle = ref<string>("");
+const dialogMessage = ref<string>("");
+const dialogButtons = ref<DialogButton[]>([
+  {
+    label: "OK",
+    priority: 1,
+    callback: () => (dialogOpen.value = false),
+  },
+]);
+
+function showQueueError(message: string) {
+  if (dialogOpen.value) return;
+
+  dialogTitle.value = "Error";
+  dialogMessage.value = message;
+  dialogButtons.value = [
+    {
+      label: "Leave Queue",
+      priority: 1,
+      callback: () => handleCancel(),
+    },
+  ];
+  dialogOpen.value = true;
+}
 
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 let channel: ReturnType<typeof user.supabase.channel> | null = null;
@@ -67,7 +114,7 @@ async function joinQueue() {
         table: "matchmaking_queue",
         filter: `uid=eq.${user.data?.sub}`,
       },
-      (payload) => {
+      (payload: any) => {
         // Enter match
         if (payload.new.status === "matched") {
           leaveQueue(false);
@@ -75,22 +122,33 @@ async function joinQueue() {
         }
       },
     )
-    .subscribe();
+    .subscribe((status: string) => {
+      if (status === "CHANNEL_ERROR")
+        showQueueError(
+          "Failed to connect to matchmaking. If you're using an ad blocker or privacy tool, try disabling it; MMK's servers may be flagged as suspicious. MMK does not serve ads or track users.",
+        );
+    });
 
   // Send heartbeat
-  await user.supabase.from("matchmaking_heartbeats").upsert(
-    {
-      uid: user.data?.sub,
-      last_heartbeat: new Date().toISOString(),
-    },
-    { onConflict: "uid" },
-  );
+  const { error: heartbeatError } = await user.supabase
+    .from("matchmaking_heartbeats")
+    .upsert(
+      { uid: user.data?.sub, last_heartbeat: new Date().toISOString() },
+      { onConflict: "uid" },
+    );
+  if (heartbeatError)
+    return showQueueError(
+      "Failed to ping queuing server. If you're using an ad blocker or privacy tool, try disabling it; MMK's servers may be flagged as suspicious. MMK does not serve ads or track users.",
+    );
 
   // Add the user to the queue
-  await user.supabase.from("matchmaking_queue").insert({
-    uid: user.data?.sub,
-    rank: user.rank,
-  });
+  const { error: queueError } = await user.supabase
+    .from("matchmaking_queue")
+    .insert({ uid: user.data?.sub, rank: user.rank });
+  if (queueError)
+    return showQueueError(
+      "Failed to join queue. If you're using an ad blocker or privacy tool, try disabling it; MMK's servers may be flagged as suspicious. MMK does not serve ads or track users.",
+    );
 
   // Every 5 seconds, ping the "matchmaking_heartbeats" table to confirm that the user is still in the queue
   heartbeatInterval = setInterval(heartbeat, 5000);
@@ -202,49 +260,3 @@ onUnmounted(() => {
   }
 }
 </style>
-
-<!--
-                      ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⠀⠀⠀⣾⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠈⣿⣿⣿⣿⣿⣿⠟⠉⠀⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀⠙⢻⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀⣠⣄⠀⢻⣿⣿⣿⣿⣿⡿⠀⣠⣄⠀⠀⠀⢻⣿⣿⣏⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⣾⣿⣿⣿⣿⠀⠀⠀⠀⠰⣿⣿⠀⢸⣿⣿⣿⣿⣿⡇⠀⣿⣿⡇⠀⠀⢸⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣄⠀⠀⠀⠀⠙⠃⠀⣼⣿⣿⣿⣿⣿⣇⠀⠙⠛⠁⠀⠀⣼⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣷⣤⣄⣀⣠⣤⣾⣿⣿⣿⣿⣿⣿⣿⣦⣄⣀⣀⣤⣾⣿⣿⣿⣿⠃⠀⠀⢀⣀⠀⠀
-                      ⠰⡶⠶⠶⠶⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⠛⠉⠉⠙⠛⠋⠀
-                      ⠀⠀⢀⣀⣠⣤⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠷⠶⠶⠶⢤⣤⣀⠀
-                      ⠀⠛⠋⠉⠁⠀⣀⣴⡿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣯⣤⣀⡀⠀⠀⠀⠀⠘⠃
-                      ⠀⠀⢀⣤⡶⠟⠉⠁⠀⠀⠉⠛⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠟⠉⠀⠀⠀⠉⠙⠳⠶⣄⡀⠀⠀
-                      ⠀⠀⠙⠁⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠁⠀⠀
-                      ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⠀⠀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                      ⠀⠀⠀⠀⣸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-
-              ▄████▄ █████▄ ▄█████ ▄████▄ ██     ██  ██ ██████ ██████ 
-              ██▄▄██ ██▄▄██ ▀▀▀▄▄▄ ██  ██ ██     ██  ██   ██   ██▄▄   
-              ██  ██ ██▄▄█▀ █████▀ ▀████▀ ██████ ▀████▀   ██   ██▄▄▄▄ 
-                                                        
-⠀⠀⠀⠀⠀⠀⣠⣴⣾⣿⣿⣿⣶⣦⣄⠀⠀⠀⢰⣶⣶⡆⠀⠀⣶⣶⣶⣄⠀⠀⠀⠀⠀⣶⣶⡆⠀⠀⢰⣶⣶⣶⣶⣶⣶⣶⣶⣶⡆⠀⠀⣶⣶⣶⣶⡄⠀⠀⠀⠀⢰⣶⣶⣶⣶⠀⠀⠀⠀⠀⠀⢀⣶⣶⣶⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⢀⣼⣿⡿⠉⠀⠀⠈⠙⢿⣿⣧⠀⠀⢸⣿⣿⡇⠀⠀⣿⣿⣿⣿⣆⠀⠀⠀⠀⣿⣿⡇⠀⠀⢸⣿⣿⠉⠉⠉⠉⠉⠉⠉⠁⠀⠀⣿⣿⡟⣿⣷⠀⠀⠀⠀⣾⣿⢻⣿⣿⠀⠀⠀⠀⠀⠀⣼⣿⠏⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⣼⣿⣿⠀⠀⠀⠀⠀⠀⠘⠛⠛⠃⠀⢸⣿⣿⡇⠀⠀⣿⣿⡇⠹⣿⣦⠀⠀⠀⣿⣿⡇⠀⠀⢸⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⡇⢹⣿⡆⠀⠀⢰⣿⡏⢸⣿⣿⠀⠀⠀⠀⠀⣸⣿⡟⠀⢹⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⡇⠀⠀⣿⣿⡇⠀⠹⣿⣧⡀⠀⣿⣿⡇⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⣿⣿⡇⠀⣿⣿⠀⠀⣾⣿⠁⢸⣿⣿⠀⠀⠀⠀⢠⣿⣿⠃⠀⠈⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⢿⣿⣷⠀⠀⠀⠀⠀⠀⢀⣀⣀⡀⠀⢸⣿⣿⡇⠀⠀⣿⣿⡇⠀⠀⠘⣿⣷⡀⣿⣿⡇  ⢸⣿⣿   ⠀⠀⠀⠀⠀⠀⠀⣿⣿⡇⠀⠸⣿⡇⢠⣿⡏⠀⢸⣿⣿⠀⠀⠀⠀⣾⣿⣯⣤⣤⣤⣼⣿⣿⡀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠘⢿⣿⣧⣀⠀⠀⠀⣀⣼⣿⡟⠀⠀⢸⣿⣿⡇⠀⠀⣿⣿⡇⠀⠀⠀⠘⢿⣿⣿⣿⡇  ⢸⣿⣿⣀⣀⣀⣀⣀⣀⣀⡀⠀⠀⣿⣿⡇⠀⠀⢿⣷⣾⣿⠁⠀⢸⣿⣿⠀⠀⠀⣸⣿⡿⠻⠿⠿⠿⠿⢿⣿⣷⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠈⠛⢿⣿⣿⣿⣿⣿⠿⠋⠀⠀⠀⢸⣿⣿⠇⠀⠀⣿⣿⡇⠀⠀⠀⠀⠈⢿⣿⣿⡇  ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⣿⣿⡇⠀⠀⠘⣿⣿⡏⠀⠀⢸⣿⣿⠀⠀⢰⣿⣿⠇⠀⠀⠀⠀⠀⠘⣿⣿⣇⠀⠀⠀⠀⠀
--->

@@ -10,6 +10,7 @@
           class="relative flex flex-col gap-5 p-8 w-full max-h-xl sm:max-w-xl border-solid sm:border-4 border-card-border rounded-t-2xl sm:rounded-none bg-card text-card-foreground"
         >
           <Icon
+            v-if="props.closeButton"
             name="pixelarticons:close"
             class="cursor-pointer absolute top-5 right-5 w-5 h-5"
             @click="emit('close')"
@@ -29,14 +30,14 @@
               <UiButtonSimplePrimary
                 v-if="button.priority === 1"
                 :label="button.label"
-                class="min-w-24 sm:max-w-32"
+                class="w-full sm:w-auto sm:min-w-24"
                 @click="button.callback"
               />
 
               <UiButtonSimpleSecondary
                 v-else-if="button.priority === 2"
                 :label="button.label"
-                class="min-w-24 sm:max-w-32"
+                class="w-full sm:w-auto sm:min-w-24"
                 @click="button.callback"
               />
             </template>
@@ -50,11 +51,17 @@
 <script setup lang="ts">
 import type { DialogButton } from "~/types/dialog";
 
-const props = defineProps<{
-  open: boolean;
-  title: string;
-  buttons: DialogButton[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    open: boolean;
+    title: string;
+    closeButton?: boolean;
+    buttons: DialogButton[];
+  }>(),
+  {
+    closeButton: true,
+  },
+);
 
 const emit = defineEmits<{
   (e: "close"): void;
