@@ -124,7 +124,7 @@ onMounted(async () => {
     const cardIds: string = user.cards.map((card) => card.id).join(",");
 
     cards.value = await $fetch(`${config.public.mmkPanelApi}/cards`, {
-      query: { ids: cardIds },
+      query: { id: cardIds },
     });
   }
 
