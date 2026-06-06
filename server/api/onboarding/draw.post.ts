@@ -7,7 +7,6 @@ import type { Card } from "~/types/collection";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
-
   if (!user)
     throw createError({ statusCode: 401, statusMessage: "Unauthorized." });
 
@@ -18,7 +17,6 @@ export default defineEventHandler(async (event) => {
     .select("onboarded, draft")
     .eq("uid", user.sub)
     .single();
-
   if (profile?.onboarded)
     // user must not already be onboarded
     throw createError({ statusCode: 403, message: "Already onboarded." });
@@ -37,7 +35,7 @@ export default defineEventHandler(async (event) => {
   const cards = await $fetch<Card[]>(
     `${config.public.mmkPanelApi}/cards/random/`,
     {
-      query: { rarityWeight: 1 },
+      query: { rarityWeight: 1 }, // should be Grade IV cards only
     },
   );
   const card = cards[0];
@@ -47,10 +45,15 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Failed to draw card.",
     });
 
-  await supabase
+  const { error } = await supabase
     .from("user_stats")
     .update({ draft: card.id })
     .eq("uid", user.sub);
+  if (error)
+    throw createError({
+      statusCode: 500,
+      statusMessage: `Failed to update user draft card: ${error.message}`,
+    });
 
   return { success: true, data: card };
 });

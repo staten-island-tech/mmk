@@ -1,7 +1,8 @@
 import type { Database } from "~/types/database.types";
-import type { UserStats, UserCardSimple } from "~/types/user";
+import type { Card } from "~/types/collection";
 
 export const useUserStore = defineStore("user", () => {
+  const config = useRuntimeConfig();
   const supabase = useSupabaseClient<Database>();
   const data = useSupabaseUser();
 
@@ -9,8 +10,8 @@ export const useUserStore = defineStore("user", () => {
   const wins = ref<number | null>(null);
   /** The number of games the user has played. (int32) */
   const games = ref<number | null>(null);
-  /** The array of card the user owns. (jsonb) */
-  const cards = ref<UserCardSimple[] | null>(null);
+  /** The array of card IDs the user owns. (int32[]) */
+  const cards = ref<Card[] | null>(null);
 
   /**
    * The user's rank.
@@ -32,10 +33,18 @@ export const useUserStore = defineStore("user", () => {
   );
 
   async function fetchStats() {
-    const { data: stats } = await $fetch<{ data: UserStats }>("/api/stats");
+    const { data: stats } = await $fetch("/api/stats");
     wins.value = stats.wins;
     games.value = stats.games;
-    cards.value = stats.cards;
+
+    // Get all cards from card IDs
+    const cardsData = await $fetch<Card[]>(
+      `${config.public.mmkPanelApi}/cards`,
+      {
+        query: { id: stats.cards.map((card) => card.card_id).join(",") },
+      },
+    );
+    cards.value = cardsData;
   }
 
   return { supabase, data, cards, wins, games, rank, fetchStats };

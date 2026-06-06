@@ -80,26 +80,6 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 
 
 
-CREATE OR REPLACE FUNCTION "public"."add_card_to_user"("player_uid" "uuid", "card" "jsonb") RETURNS "void"
-    LANGUAGE "sql"
-    AS $$update user_stats
-set
-  cards = cards || jsonb_build_array(card)
-where
-  uid = player_uid
-  and not exists (
-    select
-      1
-    from
-      jsonb_array_elements(cards) as c
-    where
-      (c ->> 'id')::int = (card ->> 'id')::int
-  );$$;
-
-
-ALTER FUNCTION "public"."add_card_to_user"("player_uid" "uuid", "card" "jsonb") OWNER TO "supabase_admin";
-
-
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -185,11 +165,41 @@ COMMENT ON TABLE "public"."matchmaking_queue" IS 'The list of users in the match
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."user_cards" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "uid" "uuid" DEFAULT "auth"."uid"() NOT NULL,
+    "card_id" integer NOT NULL,
+    "obtained_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."user_cards" OWNER TO "supabase_admin";
+
+
+COMMENT ON TABLE "public"."user_cards" IS 'Table of user-owned cards.';
+
+
+
+COMMENT ON COLUMN "public"."user_cards"."id" IS 'The user card entry ID.';
+
+
+
+COMMENT ON COLUMN "public"."user_cards"."uid" IS 'The ID of the user owning the card.';
+
+
+
+COMMENT ON COLUMN "public"."user_cards"."card_id" IS 'The ID of the card.';
+
+
+
+COMMENT ON COLUMN "public"."user_cards"."obtained_at" IS 'The date and time at which the user obtained the card.';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."user_stats" (
     "uid" "uuid" DEFAULT "auth"."uid"() NOT NULL,
     "wins" integer DEFAULT 0 NOT NULL,
     "games" integer DEFAULT 0 NOT NULL,
-    "cards" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
     "onboarded" boolean DEFAULT false NOT NULL,
     "draft" integer
 );
@@ -207,10 +217,6 @@ COMMENT ON COLUMN "public"."user_stats"."wins" IS 'The number of wins the user h
 
 
 COMMENT ON COLUMN "public"."user_stats"."games" IS 'The number of games the user has played.';
-
-
-
-COMMENT ON COLUMN "public"."user_stats"."cards" IS 'The cards owned by the user.';
 
 
 
@@ -234,6 +240,11 @@ ALTER TABLE ONLY "public"."matchmaking_heartbeats"
 
 ALTER TABLE ONLY "public"."matchmaking_queue"
     ADD CONSTRAINT "matchmaking_queue_pkey" PRIMARY KEY ("uid");
+
+
+
+ALTER TABLE ONLY "public"."user_cards"
+    ADD CONSTRAINT "user_cards_pkey" PRIMARY KEY ("id");
 
 
 
@@ -276,16 +287,21 @@ ALTER TABLE ONLY "public"."matchmaking_queue"
 
 
 
+ALTER TABLE ONLY "public"."user_cards"
+    ADD CONSTRAINT "user_cards_uid_fkey" FOREIGN KEY ("uid") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."user_stats"
     ADD CONSTRAINT "user_stats_uid_fkey" FOREIGN KEY ("uid") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
-CREATE POLICY "Allow users to read own data" ON "public"."user_stats" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "uid"));
-
-
-
 CREATE POLICY "Users can manage own queue row" ON "public"."matchmaking_queue" TO "authenticated" USING (("uid" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("uid" = ( SELECT "auth"."uid"() AS "uid")));
+
+
+
+CREATE POLICY "Users can read own data" ON "public"."user_stats" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "uid"));
 
 
 
@@ -297,6 +313,10 @@ CREATE POLICY "Users can upsert own heartbeat" ON "public"."matchmaking_heartbea
 
 
 
+CREATE POLICY "Users can view own cards" ON "public"."user_cards" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "uid"));
+
+
+
 ALTER TABLE "public"."matches" ENABLE ROW LEVEL SECURITY;
 
 
@@ -304,6 +324,9 @@ ALTER TABLE "public"."matchmaking_heartbeats" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."matchmaking_queue" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."user_cards" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."user_stats" ENABLE ROW LEVEL SECURITY;
@@ -561,13 +584,6 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."add_card_to_user"("player_uid" "uuid", "card" "jsonb") TO "postgres";
-GRANT ALL ON FUNCTION "public"."add_card_to_user"("player_uid" "uuid", "card" "jsonb") TO "anon";
-GRANT ALL ON FUNCTION "public"."add_card_to_user"("player_uid" "uuid", "card" "jsonb") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."add_card_to_user"("player_uid" "uuid", "card" "jsonb") TO "service_role";
-
-
-
 REVOKE ALL ON FUNCTION "public"."handle_new_user"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "postgres";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
@@ -633,6 +649,13 @@ GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public".
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."matchmaking_queue" TO "anon";
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."matchmaking_queue" TO "authenticated";
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."matchmaking_queue" TO "service_role";
+
+
+
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."user_cards" TO "postgres";
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."user_cards" TO "anon";
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."user_cards" TO "authenticated";
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."user_cards" TO "service_role";
 
 
 

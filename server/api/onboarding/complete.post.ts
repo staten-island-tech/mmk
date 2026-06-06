@@ -3,60 +3,46 @@ import {
   serverSupabaseUser,
 } from "#supabase/server";
 import type { Database } from "~/types/database.types";
-import type { Card } from "~/types/collection";
-import type { UserCardSimple } from "~/types/user";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
-
   if (!user)
     throw createError({ statusCode: 401, statusMessage: "Unauthorized." });
 
   const supabase = serverSupabaseServiceRole<Database>(event);
 
+  // Get user `onboarded` and `draft`
   const { data: profile } = await supabase
     .from("user_stats")
     .select("onboarded, draft")
     .eq("uid", user.sub)
     .single();
-
   if (profile?.onboarded)
     throw createError({ statusCode: 403, statusMessage: "Already onboarded." });
-
   if (!profile?.draft)
-    throw createError({ statusCode: 400, statusMessage: "No card drawn." });
+    throw createError({ statusCode: 400, statusMessage: "No card drawn yet." });
 
-  const config = useRuntimeConfig();
-  const cards = await $fetch<Card[]>(`${config.public.mmkPanelApi}/cards/`, {
-    query: { id: profile.draft },
+  // Add new card entry to user cards
+  const { error: cardsError } = await supabase.from("user_cards").insert({
+    uid: user.sub,
+    card_id: profile.draft,
   });
-  const card = cards[0];
+  if (cardsError)
+    throw createError({
+      statusCode: 500,
+      statusMessage: `Failed to add card to user profile: ${cardsError.message}`,
+    });
 
-  if (!card)
-    throw createError({ statusCode: 500, statusMessage: "Card not found." });
-
-  const cardSimplified: UserCardSimple = {
-    id: card.id,
-    moveIds: card.moves.map((move) => move.id),
-    rarity: {
-      id: card.rarity.id,
-      weight: card.rarity.weight,
-      name: card.rarity.name,
-    },
-  };
-
-  const { error } = await supabase.rpc("add_card_to_user", {
-    player_uid: user.sub,
-    card: cardSimplified,
-  });
-
-  if (error)
-    throw createError({ statusCode: 500, statusMessage: error.message });
-
-  await supabase
+  // Set `onboarded` status to true
+  const { error: statsError } = await supabase
     .from("user_stats")
     .update({ onboarded: true, draft: null })
     .eq("uid", user.sub);
+  if (statsError)
+    throw createError({
+      statusCode: 500,
+      statusMessage: `Failed to update user onboarded status: ${statsError.message}`,
+    });
 
   return { success: true };
 });

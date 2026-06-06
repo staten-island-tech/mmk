@@ -24,7 +24,7 @@
         </div>
 
         <div
-          v-else-if="cards.length === 0"
+          v-else-if="user.cards?.length === 0"
           class="flex flex-col justify-center items-center text-center gap-4 w-full h-full"
         >
           <Icon
@@ -38,7 +38,7 @@
 
         <template v-else>
           <UiCardSimple
-            v-for="card in cards"
+            v-for="card in user.cards"
             class="flex flex-col w-[28rem] h-[34rem]"
           >
             <div
@@ -102,32 +102,16 @@
 </template>
 
 <script setup lang="ts">
-import type { Card } from "~/types/collection";
-
 definePageMeta({
   middleware: "authenticated",
 });
 
-const config = useRuntimeConfig();
 const user = useUserStore();
-
-/** The full details of every card the user owns. */
-const cards = ref<Card[]>([]);
 
 const loading = ref(true);
 
 onMounted(async () => {
   await user.fetchStats();
-
-  if (user.cards) {
-    /** The card IDs combined into one string delimited by a comma (e.g., "0,1,2,3") */
-    const cardIds: string = user.cards.map((card) => card.id).join(",");
-
-    cards.value = await $fetch(`${config.public.mmkPanelApi}/cards`, {
-      query: { id: cardIds },
-    });
-  }
-
   loading.value = false;
 });
 </script>
