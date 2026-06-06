@@ -43,17 +43,18 @@
           name="pixelarticons:briefcase-account"
           class="w-4 h-4 text-red-500"
         />
-        {{ user.cards?.length ?? "--" }} cards
+        {{ user.cards?.length ?? "--" }}
+        {{ user.cards?.length === 1 ? "card" : "cards" }}
       </div>
 
       <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
         <Icon name="pixelarticons:gamepad" class="w-4 h-4 text-indigo-500" />
-        {{ user.games ?? "--" }} games
+        {{ user.games ?? "--" }} {{ user.games === 1 ? "game" : "games" }}
       </div>
 
       <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
         <Icon name="pixelarticons:trophy" class="w-4 h-4 text-emerald-500" />
-        {{ user.wins ?? "--"}} wins
+        {{ user.wins ?? "--" }} {{ user.wins === 1 ? "win" : "wins" }}
       </div>
 
       <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
@@ -61,7 +62,7 @@
           name="pixelarticons:cellular-signal-0"
           class="w-4 h-4 text-sky-500"
         />
-        {{ user.rank ?? "--"}}
+        {{ user.rank ?? "--" }}
       </div>
     </footer>
   </div>

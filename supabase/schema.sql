@@ -82,10 +82,19 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 
 CREATE OR REPLACE FUNCTION "public"."add_card_to_user"("player_uid" "uuid", "card" "jsonb") RETURNS "void"
     LANGUAGE "sql"
-    AS $$UPDATE user_stats
-SET cards = cards || jsonb_build_array(card)
-WHERE uid = player_uid
-AND NOT cards @> jsonb_build_array(card);$$;
+    AS $$update user_stats
+set
+  cards = cards || jsonb_build_array(card)
+where
+  uid = player_uid
+  and not exists (
+    select
+      1
+    from
+      jsonb_array_elements(cards) as c
+    where
+      (c ->> 'id')::int = (card ->> 'id')::int
+  );$$;
 
 
 ALTER FUNCTION "public"."add_card_to_user"("player_uid" "uuid", "card" "jsonb") OWNER TO "supabase_admin";
@@ -94,14 +103,15 @@ ALTER FUNCTION "public"."add_card_to_user"("player_uid" "uuid", "card" "jsonb") 
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
-    AS $$
-begin
-  insert into public.user_stats (uid)
-  values (new.id);
+    AS $$begin
+insert into
+  public.user_stats (uid)
+values
+  (new.id);
 
-  return new;
-end;
-$$;
+return new;
+
+end;$$;
 
 
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "supabase_admin";
@@ -109,7 +119,8 @@ ALTER FUNCTION "public"."handle_new_user"() OWNER TO "supabase_admin";
 
 CREATE OR REPLACE FUNCTION "public"."release_matchmaking_lock"() RETURNS "void"
     LANGUAGE "sql"
-    AS $$select pg_advisory_unlock(99999);$$;
+    AS $$select
+  pg_advisory_unlock(99999);$$;
 
 
 ALTER FUNCTION "public"."release_matchmaking_lock"() OWNER TO "supabase_admin";
@@ -117,7 +128,8 @@ ALTER FUNCTION "public"."release_matchmaking_lock"() OWNER TO "supabase_admin";
 
 CREATE OR REPLACE FUNCTION "public"."try_matchmaking_lock"() RETURNS boolean
     LANGUAGE "sql"
-    AS $$select pg_try_advisory_lock(99999)$$;
+    AS $$select
+  pg_try_advisory_lock(99999)$$;
 
 
 ALTER FUNCTION "public"."try_matchmaking_lock"() OWNER TO "supabase_admin";
@@ -177,7 +189,9 @@ CREATE TABLE IF NOT EXISTS "public"."user_stats" (
     "uid" "uuid" DEFAULT "auth"."uid"() NOT NULL,
     "wins" integer DEFAULT 0 NOT NULL,
     "games" integer DEFAULT 0 NOT NULL,
-    "cards" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL
+    "cards" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "onboarded" boolean DEFAULT false NOT NULL,
+    "draft" integer
 );
 
 
@@ -197,6 +211,14 @@ COMMENT ON COLUMN "public"."user_stats"."games" IS 'The number of games the user
 
 
 COMMENT ON COLUMN "public"."user_stats"."cards" IS 'The cards owned by the user.';
+
+
+
+COMMENT ON COLUMN "public"."user_stats"."onboarded" IS 'Whether or not the user completed the onboarding.';
+
+
+
+COMMENT ON COLUMN "public"."user_stats"."draft" IS 'The ID of the user''s starter card drawn in the onboarding.';
 
 
 
@@ -220,7 +242,7 @@ ALTER TABLE ONLY "public"."user_stats"
 
 
 
-CREATE OR REPLACE TRIGGER "trigger_matchmaking" AFTER INSERT OR UPDATE ON "public"."matchmaking_heartbeats" FOR EACH ROW EXECUTE FUNCTION "supabase_functions"."http_request"('https://YOUR_SUPABASE_URL/functions/v1/matchmaking', 'POST', '{"Content-type":"application/json","Authorization":"Bearer YOUR_ANON_KEY"}', '{}', '5000');
+CREATE OR REPLACE TRIGGER "trigger_matchmaking" AFTER INSERT OR UPDATE ON "public"."matchmaking_heartbeats" FOR EACH ROW EXECUTE FUNCTION "supabase_functions"."http_request"('https://mmk-supa.duckdns.org/functions/v1/matchmaking', 'POST', '{"Content-type":"application/json","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc3NjU0NjQ4LCJleHAiOjE5MzUzMzQ2NDh9.RuHlIkaUq03xowU5W-nupnmqJEXabRXNlWH1aPfs_V0"}', '{}', '5000');
 
 
 

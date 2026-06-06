@@ -25,6 +25,10 @@
 <script setup lang="ts">
 import colors from "tailwindcss/colors";
 
+definePageMeta({
+  middleware: "authenticated",
+});
+
 const user = useUserStore();
 
 const message = computed<string>(() => {

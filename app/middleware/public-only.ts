@@ -1,6 +1,4 @@
-/**
- * Adds automatic redirect to the dashboard on certain pages if the user is logged in already.
- */
+/** Adds automatic redirect to the dashboard on certain pages if the user is logged in already. */
 export default defineNuxtRouteMiddleware(async () => {
   const supabase = useSupabaseClient();
   const {

@@ -142,7 +142,7 @@ async function register() {
     return;
   }
 
-  await navigateTo("/");
+  await navigateTo("/onboarding");
 }
 </script>
 

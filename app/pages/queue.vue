@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="flex justify-center items-center p-4 w-screen h-screen bg-zinc-300"
-  >
+  <div class="flex justify-center items-center p-4 w-screen h-screen">
     <UiBackgroundDomain class="brightness-75" />
     <div
       class="z-10 flex flex-col justify-center items-center text-center gap-6"
@@ -23,6 +21,10 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  middleware: "authenticated",
+});
+
 const user = useUserStore();
 
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;

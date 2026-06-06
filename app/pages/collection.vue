@@ -41,7 +41,9 @@
             v-for="card in cards"
             class="flex flex-col w-[28rem] h-[34rem]"
           >
-            <div class="flex-1 flex justify-center items-center p-8 w-full min-h-48 bg-slate-300">
+            <div
+              class="flex-1 flex justify-center items-center p-8 w-full min-h-48 bg-slate-300"
+            >
               <img :src="card.defaultSprite" class="max-h-40" />
             </div>
 
@@ -102,6 +104,10 @@
 <script setup lang="ts">
 import type { Card } from "~/types/collection";
 
+definePageMeta({
+  middleware: "authenticated",
+});
+
 const config = useRuntimeConfig();
 const user = useUserStore();
 
@@ -113,12 +119,14 @@ const loading = ref(true);
 onMounted(async () => {
   await user.fetchStats();
 
-  /** The card IDs combined into one string delimited by a comma (e.g., "0,1,2,3") */
-  const cardIds: string = user.cards.map((card) => card.id).join(",");
+  if (user.cards) {
+    /** The card IDs combined into one string delimited by a comma (e.g., "0,1,2,3") */
+    const cardIds: string = user.cards.map((card) => card.id).join(",");
 
-  cards.value = await $fetch(`${config.public.mmkPanelApi}/cards`, {
-    query: { ids: cardIds },
-  });
+    cards.value = await $fetch(`${config.public.mmkPanelApi}/cards`, {
+      query: { ids: cardIds },
+    });
+  }
 
   loading.value = false;
 });
