@@ -1,5 +1,14 @@
 <template>
   <UiDashboardShell title="Your Collection">
+    <UiModalSimple
+      :open="dialogOpen"
+      :title="dialogTitle"
+      @close="dialogOpen = false"
+      :buttons="dialogButtons"
+    >
+      {{ dialogMessage }}
+    </UiModalSimple>
+
     <div class="flex flex-col gap-4 p-12 h-full">
       <div
         class="overflow-y-auto flex flex-wrap justify-center h-full gap-12 border-4 border-double border-card-border bg-slate-200 p-8"
@@ -87,6 +96,10 @@
                     {{ card.health }} HP
                   </span>
 
+                  <span v-if="card.obtained_at" class="text-sm text-slate-500">
+                    {{ new Date(card.obtained_at).toLocaleString() }}
+                  </span>
+
                   <span class="flex items-center gap-2 text-blue-600">
                     <Icon name="pixelarticons:shield" />
                     {{ card.defense }} DEF
@@ -102,6 +115,8 @@
 </template>
 
 <script setup lang="ts">
+import type { DialogButton } from "~/types/dialog";
+
 definePageMeta({
   middleware: "authenticated",
 });
@@ -110,9 +125,49 @@ const user = useUserStore();
 
 const loading = ref(true);
 
-onMounted(async () => {
-  await user.fetchStats();
-  loading.value = false;
+const dialogOpen = ref<boolean>(false);
+const dialogTitle = ref<string>("");
+const dialogMessage = ref<string>("");
+const dialogButtons = ref<DialogButton[]>([
+  {
+    label: "OK",
+    priority: 1,
+    callback: () => (dialogOpen.value = false),
+  },
+]);
+
+async function loadCards() {
+  loading.value = true;
+
+  try {
+    await user.fetchStats();
+  } catch (_) {
+    dialogTitle.value = "Error Fetching Stats";
+    dialogMessage.value = "Could not retrieve your stats. Please try again.";
+    dialogOpen.value = true;
+    dialogButtons.value = [
+      {
+        label: "Retry",
+        priority: 1,
+        callback: async () => {
+          dialogOpen.value = false;
+          await loadCards();
+        },
+      },
+      {
+        label: "Cancel",
+        priority: 2,
+        callback: () => navigateTo("/"),
+      },
+    ];
+    return;
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(() => {
+  loadCards();
 });
 </script>
 

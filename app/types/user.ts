@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { CardSchema } from "~/types/collection";
 
 /** User stats schema. */
 export const UserStatsSchema = z.object({
@@ -26,5 +27,12 @@ export const UserCardSchema = z.object({
   obtained_at: z.iso.datetime(),
 });
 
+/** Combined card schema. */
+export const CombinedCardSchema = CardSchema.extend({
+  /** The date and time at which the user obtained the card. */
+  obtained_at: z.iso.datetime().optional(),
+});
+
 export type UserStats = z.infer<typeof UserStatsSchema>;
 export type UserCard = z.infer<typeof UserCardSchema>;
+export type CombinedCard = z.infer<typeof CombinedCardSchema>;

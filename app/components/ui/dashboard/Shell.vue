@@ -75,8 +75,8 @@ const props = defineProps<{
   title?: string;
 }>();
 
-onMounted(async () => {
-  await user.fetchStats();
+onMounted(() => {
+  user.fetchStats();
 });
 </script>
 

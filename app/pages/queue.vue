@@ -62,7 +62,7 @@ const dialogButtons = ref<DialogButton[]>([
 function showQueueError(message: string) {
   if (dialogOpen.value) return;
 
-  dialogTitle.value = "Error";
+  dialogTitle.value = "Matchmaking Error";
   dialogMessage.value = message;
   dialogButtons.value = [
     {
@@ -144,7 +144,7 @@ async function joinQueue() {
   // Add the user to the queue
   const { error: queueError } = await user.supabase
     .from("matchmaking_queue")
-    .insert({ uid: user.data?.sub, rank: user.rank });
+    .insert({ uid: user.data?.sub, rank: user.rank ?? "Grade IV" });
   if (queueError)
     return showQueueError(
       "Failed to join queue. If you're using an ad blocker or privacy tool, try disabling it; MMK's servers may be flagged as suspicious. MMK does not serve ads or track users.",

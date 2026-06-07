@@ -1,5 +1,6 @@
 import type { Database } from "~/types/database.types";
 import type { Card } from "~/types/collection";
+import type { CombinedCard } from "~/types/user";
 
 export const useUserStore = defineStore("user", () => {
   const config = useRuntimeConfig();
@@ -11,7 +12,32 @@ export const useUserStore = defineStore("user", () => {
   /** The number of games the user has played. (int32) */
   const games = ref<number | null>(null);
   /** The array of card IDs the user owns. (int32[]) */
-  const cards = ref<Card[] | null>(null);
+  const cards = ref<CombinedCard[] | null>(null);
+
+  const STORAGE_KEY = "user-stats-cache";
+  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  if (import.meta.client) {
+    // load user cache on store init
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY);
+      if (cached) {
+        const parsed: {
+          wins: number;
+          games: number;
+          cards: CombinedCard[];
+          timestamp: number;
+        } = JSON.parse(cached);
+        if (Date.now() - parsed.timestamp < CACHE_TTL) {
+          wins.value = parsed.wins;
+          games.value = parsed.games;
+          cards.value = parsed.cards;
+        } else localStorage.removeItem(STORAGE_KEY); // expired cache
+      }
+    } catch (_) {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }
 
   /**
    * The user's rank.
@@ -32,10 +58,17 @@ export const useUserStore = defineStore("user", () => {
         : "Grade I",
   );
 
-  async function fetchStats() {
+  /** Retrieve user stats. */
+  async function fetchStats(forceRefresh = false) {
+    if (!forceRefresh && cards.value !== null) return;
+
     const { data: stats } = await $fetch("/api/stats");
     wins.value = stats.wins;
     games.value = stats.games;
+
+    const cardsMap = new Map(
+      stats.cards.map((c) => [c.card_id, c.obtained_at]),
+    );
 
     // Get all cards from card IDs
     const cardsData = await $fetch<Card[]>(
@@ -44,8 +77,45 @@ export const useUserStore = defineStore("user", () => {
         query: { id: stats.cards.map((card) => card.card_id).join(",") },
       },
     );
-    cards.value = cardsData;
+
+    cards.value = cardsData.map((card) => ({
+      ...card,
+      obtained_at: cardsMap.get(card.id),
+    })); // add card obtain timestamp
+
+    saveToCache();
   }
 
-  return { supabase, data, cards, wins, games, rank, fetchStats };
+  /** Clear cache and force refresh. */
+  function invalidateCache() {
+    localStorage.removeItem(STORAGE_KEY);
+    cards.value = null;
+    wins.value = null;
+    games.value = null;
+  }
+
+  /** Save current state to cache, */
+  function saveToCache() {
+    if (import.meta.client && cards.value !== null)
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          cards: cards.value,
+          wins: wins.value,
+          games: games.value,
+          timestamp: Date.now(),
+        }),
+      );
+  }
+
+  return {
+    supabase,
+    data,
+    cards,
+    wins,
+    games,
+    rank,
+    fetchStats,
+    invalidateCache,
+  };
 });
