@@ -277,13 +277,13 @@ ALTER TABLE ONLY "public"."matchmaking_heartbeats"
 
 
 
-ALTER TABLE ONLY "public"."matchmaking_heartbeats"
-    ADD CONSTRAINT "matchmaking_heartbeats_uid_fkey1" FOREIGN KEY ("uid") REFERENCES "public"."matchmaking_queue"("uid") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE ONLY "public"."matchmaking_queue"
+    ADD CONSTRAINT "matchmaking_queue_uid_fkey" FOREIGN KEY ("uid") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
 ALTER TABLE ONLY "public"."matchmaking_queue"
-    ADD CONSTRAINT "matchmaking_queue_uid_fkey" FOREIGN KEY ("uid") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "matchmaking_queue_uid_fkey1" FOREIGN KEY ("uid") REFERENCES "public"."matchmaking_heartbeats"("uid") ON DELETE CASCADE;
 
 
 

@@ -74,15 +74,7 @@ export type Database = {
           last_heartbeat?: string;
           uid?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "matchmaking_heartbeats_uid_fkey1";
-            columns: ["uid"];
-            isOneToOne: true;
-            referencedRelation: "matchmaking_queue";
-            referencedColumns: ["uid"];
-          },
-        ];
+        Relationships: [];
       };
       matchmaking_queue: {
         Row: {
@@ -106,7 +98,15 @@ export type Database = {
           status?: string;
           uid?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "matchmaking_queue_uid_fkey1";
+            columns: ["uid"];
+            isOneToOne: true;
+            referencedRelation: "matchmaking_heartbeats";
+            referencedColumns: ["uid"];
+          },
+        ];
       };
       user_cards: {
         Row: {

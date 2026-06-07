@@ -171,7 +171,7 @@ async function leaveQueue(deleteRow = true) {
 
   if (deleteRow && user.data?.sub) {
     await user.supabase
-      .from("matchmaking_queue")
+      .from("matchmaking_heartbeats")
       .delete()
       .eq("uid", user.data?.sub);
   }
