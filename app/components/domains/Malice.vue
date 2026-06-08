@@ -33,7 +33,7 @@ class Slash {
     this.message = Math.random() < 0.1 ? "HOS" : null;
     this.angle = Math.random() * Math.PI * 2;
 
-    this.length = intense ? Math.random() * 300 + 70 : Math.random() *  500 + 30;
+    this.length = intense ? Math.random() * 300 + 70 : Math.random() *   500 + 30;
     this.life = intense ? Math.random() * 20 + 15 : Math.random() * 20 + 10;
     this.thickness = intense ? Math.random() * 5 + 4 : Math.random() * 2 + 1;
     this.speed = intense ? Math.random() * 2 + 4 : Math.random() * 8 + 2.5;
