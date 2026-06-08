@@ -51,6 +51,10 @@ export interface Move {
   readonly enemyPoison: [number, number] | null;
   readonly enemyPreventMove: number | null;
   readonly enemyCustomDialogue: string | null;
+
+  readonly domainComponentName: string | null;
+  readonly domainLength: number | null;
+
 }
 
 /** Card move schema. */

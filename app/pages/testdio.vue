@@ -35,33 +35,47 @@
       </div>
     </Transition>
 
+    <!-- Active Domain Overlay -->
+ <component
+  v-if="activeDomain && domainComponentMap[activeDomain.componentName]"
+  :is="domainComponentMap[activeDomain.componentName]"
+  class="absolute inset-0 z-30 pointer-events-none"
+/>
+<div class="absolute top-4 left-4 z-50 bg-black text-white text-xs p-2 font-mono">
+  DEBUG INFO<br/>
+  battleState: {{ battleState }}<br/>
+  activeDomain: {{ activeDomain }}<br/>
+  resolved: {{ activeDomain ? resolveComponent(activeDomain.componentName) : 'null' }}
+</div>
+
     <!-- Battlefield -->
-    <div
-      class="overflow-hidden relative grid h-3/4 grid-cols-2 grid-rows-2 p-12 bg-slate-100"
-      style="
-        background-image:
-          linear-gradient(#cbd5e1 1px, transparent 1px),
-          linear-gradient(90deg, #cbd5e1 1px, transparent 1px);
-        background-size: 64px 64px;
-      "
-    >
-      <!-- Ground -->
-      <div
-        class="absolute bottom-0 left-1/2 w-[300%] h-96 origin-bottom bg-slate-200"
-        style="
-          transform: translateX(-50%) perspective(350px) rotateX(45deg);
-          background-image:
-            linear-gradient(#94a3b8 1px, transparent 1px),
-            linear-gradient(90deg, #94a3b8 1px, transparent 1px);
-          background-size: 8rem 8rem;
-          mask-image: linear-gradient(to bottom, transparent 0%, black 35%);
-          -webkit-mask-image: linear-gradient(
-            to bottom,
-            transparent 0%,
-            black 35%
-          );
-        "
-      />
+     
+ <div
+  class="overflow-hidden relative grid h-3/4 grid-cols-2 grid-rows-2 p-12 transition-colors duration-700"
+  :class="isMaliceActive ? '' : 'bg-slate-100'"
+  :style="{
+    backgroundColor: isMaliceActive ? '#1a0000' : undefined,
+    backgroundImage: isMaliceActive
+      ? 'linear-gradient(#3d0a0a 1px, transparent 1px), linear-gradient(90deg, #3d0a0a 1px, transparent 1px)'
+      : 'linear-gradient(#cbd5e1 1px, transparent 1px), linear-gradient(90deg, #cbd5e1 1px, transparent 1px)',
+    backgroundSize: '64px 64px'
+  }"
+>
+  <!-- Ground -->
+  <div
+    class="absolute bottom-0 left-1/2 w-[300%] h-96 origin-bottom transition-colors duration-700"
+    :class="isMaliceActive ? '' : 'bg-slate-200'"
+    :style="{
+      transform: 'translateX(-50%) perspective(350px) rotateX(45deg)',
+      backgroundColor: isMaliceActive ? '#2a0505' : undefined,
+      backgroundImage: isMaliceActive
+        ? 'linear-gradient(#4a1010 1px, transparent 1px), linear-gradient(90deg, #4a1010 1px, transparent 1px)'
+        : 'linear-gradient(#94a3b8 1px, transparent 1px), linear-gradient(90deg, #94a3b8 1px, transparent 1px)',
+      backgroundSize: '8rem 8rem',
+      maskImage: 'linear-gradient(to bottom, transparent 0%, black 35%)',
+      WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 35%)'
+    }"
+  />
 
       <!-- Player 2 card -->
       <div class="flex items-start justify-start p-5 z-10">
@@ -205,7 +219,20 @@
 
 <script setup lang="ts">
 import type { Card, CardMove } from "~/types/collection";
+import { resolveComponent } from 'vue'
+import { useNuxtApp } from '#app'
 
+
+const domainComponentMap: Record<string, ReturnType<typeof resolveComponent>> = {
+  DomainsMalice: resolveComponent('DomainsMalice'),
+  DomainsWormhole: resolveComponent('DomainsWormhole'),
+  DomainsStargate: resolveComponent('DomainsStargate'),
+  DomainsSingularity: resolveComponent('DomainsSingularity'),
+  DomainsEntropy: resolveComponent('DomainsEntropy'),
+}
+const isMaliceActive = computed(() =>
+  activeDomain.value?.componentName === 'DomainsMalice'
+)
 const p1Card: Card = {
   id: 4,
   moves: [
@@ -241,6 +268,8 @@ const p1Card: Card = {
         enemyPoison: null,
         enemyPreventMove: null,
         enemyCustomDialogue: null,
+        domainComponentName: null,
+        domainLength: null,
       },
       sprite: null,
     },
@@ -263,7 +292,7 @@ const p1Card: Card = {
         selfPoison: null,
         selfPreventMove: null,
         selfCustomDialogue:
-          "Sorry, Frusci. I'm not even angry over you right now. I bear no grudges against anyone. it's just that the world feels so, so wonderful right now. \r\n$$BREAK$$\r\nThroughout the heavens and the Earth I alone am the honored one.\r\n$$BREAK$$\r\nThe merit of having a technique passed down for generations is having a user's manual. The demerit is that information about the technique is easily leaked. You were a member of the Programmer Clan, weren't you? That's why you know so much about the limitless technique.\r\n$$BREAK$$\r\nHowever, even in the Catboy Clan, only a scant few know about this. Take the amplified and the reversal. Then smash those two different expressions of infinity to create and push out imaginary mass.\r\n$$BREAK$$\r\nImaginary Technique: Caffeine Spill.",
+          "Sorry, Frusci. I'm not even angry over you right now. I bear no grudges against anyone. it's just that the world feels so, so wonderful right now. \r\n$$BREAK$$\r\nThroughout the heavens and the Earth I alone am the honored one.\r\n$$Break$$\r\nThe merit of having a technique passed down for generations is having a user's manual. The demerit is that information about the technique is easily leaked. You were a member of the Programmer Clan, weren't you? That's why you know so much about the limitless technique.\r\n$$Break$$\r\nHowever, even in the Catboy Clan, only a scant few know about this. Take the amplified and the reversal. Then smash those two different expressions of infinity to create and push out imaginary mass.\r\n$$Break$$\r\nImaginary Technique: Caffeine Spill.",
         enemyDefenseMultiplier: null,
         enemyAttackMultiplier: null,
         enemyMoveEnergyMultiplier: null,
@@ -277,6 +306,8 @@ const p1Card: Card = {
         enemyPoison: null,
         enemyPreventMove: null,
         enemyCustomDialogue: "",
+        domainComponentName: null,
+        domainLength: null,
       },
       sprite: null,
     },
@@ -312,6 +343,8 @@ const p1Card: Card = {
         enemyPoison: null,
         enemyPreventMove: null,
         enemyCustomDialogue: null,
+        domainComponentName: null,
+        domainLength: null,
       },
       sprite: null,
     },
@@ -334,7 +367,7 @@ const p1Card: Card = {
         selfPoison: null,
         selfPreventMove: null,
         selfCustomDialogue:
-          "I wasn't worried about losing. Because you're weak. \r\n$$BREAK$$\r\nDomain Expansion: Infinite Cat",
+          "I wasn't worried about losing. Because you're weak. \r\n$$Break$$\r\nDomain Expansion: Infinite Cat",
         enemyDefenseMultiplier: null,
         enemyAttackMultiplier: null,
         enemyMoveEnergyMultiplier: null,
@@ -348,6 +381,8 @@ const p1Card: Card = {
         enemyPoison: [0.8, 2],
         enemyPreventMove: 2,
         enemyCustomDialogue: "",
+        domainComponentName: "DomainsStargate",
+        domainLength: 3,
       },
       sprite: null,
     },
@@ -408,6 +443,8 @@ const p2Card: Card = {
         enemyPoison: null,
         enemyPreventMove: null,
         enemyCustomDialogue: "",
+        domainComponentName: null,
+        domainLength: null,
       },
       sprite: null,
     },
@@ -444,6 +481,8 @@ const p2Card: Card = {
         enemyPoison: null,
         enemyPreventMove: null,
         enemyCustomDialogue: "",
+        domainComponentName: null,
+        domainLength: null,
       },
       sprite: null,
     },
@@ -480,6 +519,8 @@ const p2Card: Card = {
         enemyPoison: null,
         enemyPreventMove: null,
         enemyCustomDialogue: "",
+        domainComponentName: null,
+        domainLength: null,
       },
       sprite: null,
     },
@@ -516,6 +557,8 @@ const p2Card: Card = {
         enemyPoison: null,
         enemyPreventMove: null,
         enemyCustomDialogue: "pls dont nuke my HOS",
+        domainComponentName: null,
+        domainLength: null,
       },
       sprite: null,
     },
@@ -538,7 +581,7 @@ const p2Card: Card = {
         selfPoison: null,
         selfPreventMove: null,
         selfCustomDialogue:
-          "This is goodbye. You were born in an era without me and hailed for your strength. Yet you turned out to be painfully ordinary. \r\n$$BREAK$$\r\nDomain Expansion: Malevolent HOS",
+          "This is goodbye. You were born in an era without me and hailed for your strength. Yet you turned out to be painfully ordinary. \r\n$$Break$$\r\nDomain Expansion: Malevolent HOS",
         enemyDefenseMultiplier: null,
         enemyAttackMultiplier: null,
         enemyMoveEnergyMultiplier: null,
@@ -552,6 +595,8 @@ const p2Card: Card = {
         enemyPoison: [0.7, 3],
         enemyPreventMove: null,
         enemyCustomDialogue: "",
+        domainComponentName: "DomainsMalice",
+        domainLength: 3,
       },
       sprite:
         "https://idcpfzrbbasw.compat.objectstorage.us-ashburn-1.oraclecloud.com/mmk-media/collectibles/moves/sprites/57910567-5289-4ece-ae06-acdd0c74b6d6.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=1f3741ba2c50be9f0347d59b2bd62d1e915891eb%2F20260603%2Fus-ashburn-1%2Fs3%2Faws4_request&X-Amz-Date=20260603T002340Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=6f83541ee5e0d2c11e3b55dfc1d394d273afbb28dc5b83613511b16235f8eb51",
@@ -611,12 +656,19 @@ interface PlayerState {
   infiniteHealthTurns: number;
 }
 
+interface ActiveDomain {
+  componentName: string;
+  turnsLeft: number;
+}
+
 type BattleState =
   | "player_turn"
   | "dialogue"
   | "effects"
   | "prevented"
   | "finished";
+
+const activeDomain = ref<ActiveDomain | null>(null);
 
 function calcRarityDefenseBonus(a: Card, b: Card): [number, number] {
   if (a.rarity.weight === b.rarity.weight) return [0, 0];
@@ -661,7 +713,6 @@ const dialogueQueue = ref<DialogueLine[]>([]);
 const currentDialogue = ref<DialogueLine | null>(null);
 let afterDialogueCallback: (() => void) | null = null;
 
-// NOTE: dialogue data uses $$BREAK$$ (case-insensitive) as separator
 function enqueueDialogue(speaker: string, rawText: string) {
   const parts = rawText.split(/\$\$BREAK\$\$/i);
   for (const part of parts) {
@@ -674,20 +725,20 @@ function startDialogueQueue(onDone: () => void) {
   afterDialogueCallback = onDone;
   if (dialogueQueue.value.length === 0) return onDone();
   battleState.value = "dialogue";
-  advanceDialogue();
+  currentDialogue.value = dialogueQueue.value[0];
 }
 
 function advanceDialogue() {
-  if (dialogueQueue.value.length > 0)
-    currentDialogue.value = dialogueQueue.value.shift()!;
-  else {
+  dialogueQueue.value.shift();
+  if (dialogueQueue.value.length > 0) {
+    currentDialogue.value = dialogueQueue.value[0];
+  } else {
     currentDialogue.value = null;
-    battleState.value = "player_turn"; // temporary;
-    afterDialogueCallback?.();
+    const cb = afterDialogueCallback;
     afterDialogueCallback = null;
+    cb?.();
   }
 }
-
 function onDialogueFinished() {
   advanceDialogue();
 }
@@ -780,6 +831,14 @@ function applyEffectsFromMove(
 ) {
   const s = selfRef.value;
   const e = enemyRef.value;
+
+  // Domain handling
+  if (move.domainComponentName && move.domainLength) {
+  activeDomain.value = {
+    componentName: move.domainComponentName,
+    turnsLeft: move.domainLength,
+  };
+}
 
   if (move.selfAttackMultiplier)
     s.activeEffects.push({
@@ -882,6 +941,14 @@ function tickEffects(stateRef: typeof p1State) {
   stateRef.value.activeEffects = stateRef.value.activeEffects
     .map((e) => ({ ...e, turnsLeft: e.turnsLeft - 1 }))
     .filter((e) => e.turnsLeft > 0);
+
+  // Tick domain
+  if (activeDomain.value) {
+    activeDomain.value.turnsLeft--;
+    if (activeDomain.value.turnsLeft <= 0) {
+      activeDomain.value = null;
+    }
+  }
 }
 
 function regenEnergyAndPoison(stateRef: typeof p1State) {
@@ -970,6 +1037,7 @@ function selectMove(cardMove: CardMove) {
   }
 
   dialogueQueue.value = [];
+  
   if (move.selfCustomDialogue)
     enqueueDialogue(selfCard.name, move.selfCustomDialogue);
   if (move.enemyCustomDialogue)
@@ -993,6 +1061,12 @@ function selectMove(cardMove: CardMove) {
     }
 
     applyEffectsFromMove(move, selfRef, enemyRef);
+
+    if (selfRef.value.hp <= 0) {
+      winner.value = currentPlayer.value === 1 ? 2 : 1;
+      battleState.value = "finished";
+      return;
+    }
 
     if (enemyRef.value.hp <= 0) {
       winner.value = currentPlayer.value;
@@ -1039,6 +1113,7 @@ function resetBattle() {
   dialogueQueue.value = [];
   currentDialogue.value = null;
   effectsMessage.value = "";
+  activeDomain.value = null;
   skipToValidTurn();
 }
 

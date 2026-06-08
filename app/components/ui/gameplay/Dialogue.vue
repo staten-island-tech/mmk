@@ -36,8 +36,8 @@ const props = defineProps<{
   speaker?: string;
   dialogueText?: string;
   typingSpeedCps: number;
-  onFinished: () => void;
 }>();
+
 const emit = defineEmits<{
   (e: "finished"): void;
 }>();
@@ -46,14 +46,13 @@ const slots = useSlots();
 const displayText = ref("");
 const timer = ref<number | null>(null);
 const finishTimer = ref<number | null>(null);
+const hasFinished = ref(false);
 
 const slotText = computed(() => {
   const content = slots.default?.();
   if (!content || content.length === 0) return "";
-
   const first = content[0];
   if (!first || typeof first.children !== "string") return "";
-
   return first.children;
 });
 
@@ -67,7 +66,6 @@ const clearTimers = () => {
     window.clearInterval(timer.value);
     timer.value = null;
   }
-
   if (finishTimer.value !== null) {
     window.clearTimeout(finishTimer.value);
     finishTimer.value = null;
@@ -75,12 +73,14 @@ const clearTimers = () => {
 };
 
 const finishDialogue = () => {
+  if (hasFinished.value) return;
+  hasFinished.value = true;
   emit("finished");
-  props.onFinished?.();
 };
 
 const startTyping = () => {
   clearTimers();
+  hasFinished.value = false;
   displayText.value = "";
 
   const text = sourceText.value;
@@ -96,7 +96,6 @@ const startTyping = () => {
         window.clearInterval(timer.value);
         timer.value = null;
       }
-
       finishTimer.value = window.setTimeout(finishDialogue, 5000);
     }
   }, charDelay.value);
@@ -104,15 +103,13 @@ const startTyping = () => {
 
 const handleBoxClick = () => {
   if (displayText.value !== sourceText.value) {
-    // fast-forward
     clearTimers();
     displayText.value = sourceText.value;
-
     finishTimer.value = window.setTimeout(finishDialogue, 2000);
     return;
   }
 
-  clearTimers(); // otherwise, skip to next
+  clearTimers();
   finishDialogue();
 };
 
