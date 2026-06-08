@@ -110,7 +110,7 @@ To push your features or fixes into this official repository:
 4. Push the branch (`git push origin feature/my-feature`).
 5. Open a pull request with `contrib` as the base branch. Make sure to create a detailed title and description of your change.
 
-Please follow the [GitHub flow](https://guides.github.com/introduction/flow) and the [GNOME Code of Conduct](CODE_OF_CONDUCT.md) when submitting a pull request.
+Please follow the [GitHub flow](https://guides.github.com/introduction/flow) when submitting a pull request.
 
 ## License
 
