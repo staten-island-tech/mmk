@@ -1,7 +1,7 @@
 <template>
-  <div class="pointed-events-none z-0 fixed inset-0 bg-black">
-    <canvas ref="canvasRef" class="block w-full h-full" />
-  </div>
+  <div class="pointer-events-none z-0 inset-0 bg-black w-full h-full">
+  <canvas ref="canvasRef" class="block w-full h-full" />
+</div>
 </template>
 
 <script setup lang="ts">

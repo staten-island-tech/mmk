@@ -99,6 +99,24 @@ export default {
             purple: colors.indigo[400],
           },
         },
+        game: {
+          p1: {
+            accent: colors.blue[500],
+            light: colors.blue[400],
+            dark: colors.blue[700],
+          },
+          p2: {
+            accent: colors.red[500],
+            light: colors.red[400],
+            dark: colors.red[700],
+          },
+          battle: {
+            root: "#050508",
+            panel: "#0b0b14",
+            sky: "#0a0a14",
+            ground: "#1a1428",
+          },
+        },
       },
       opacity: {
         3: "0.03",
