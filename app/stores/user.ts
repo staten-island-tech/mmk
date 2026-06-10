@@ -14,8 +14,12 @@ export const useUserStore = defineStore("user", () => {
   /** The array of card IDs the user owns. (int32[]) */
   const cards = ref<CombinedCard[] | null>(null);
 
+  const isLoading = ref<boolean>(false);
+  const isOnCooldown = ref<boolean>(false);
+
   const STORAGE_KEY = "user-stats-cache";
   const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  const COOLDOWN_MS = 10000;
 
   if (import.meta.client) {
     // load user cache on store init
@@ -60,30 +64,41 @@ export const useUserStore = defineStore("user", () => {
 
   /** Retrieve user stats. */
   async function fetchStats(forceRefresh = false) {
+    if (isLoading.value || isOnCooldown.value) return;
     if (!forceRefresh && cards.value !== null) return;
 
-    const { data: stats } = await $fetch("/api/stats");
-    wins.value = stats.wins;
-    games.value = stats.games;
+    try {
+      isLoading.value = true;
+      isOnCooldown.value = true;
 
-    const cardsMap = new Map(
-      stats.cards.map((c) => [c.card_id, c.obtained_at]),
-    );
+      const { data: stats } = await $fetch("/api/stats");
+      wins.value = stats.wins;
+      games.value = stats.games;
 
-    // Get all cards from card IDs
-    const cardsData = await $fetch<Card[]>(
-      `${config.public.mmkPanelApi}/cards`,
-      {
-        query: { id: stats.cards.map((card) => card.card_id).join(",") },
-      },
-    );
+      const cardsMap = new Map(
+        stats.cards.map((c) => [c.card_id, c.obtained_at]),
+      );
 
-    cards.value = cardsData.map((card) => ({
-      ...card,
-      obtained_at: cardsMap.get(card.id),
-    })); // add card obtain timestamp
+      // Get all cards from card IDs
+      const cardsData = await $fetch<Card[]>(
+        `${config.public.mmkPanelApi}/cards`,
+        {
+          query: { id: stats.cards.map((card) => card.card_id).join(",") },
+        },
+      );
 
-    saveToCache();
+      cards.value = cardsData.map((card) => ({
+        ...card,
+        obtained_at: cardsMap.get(card.id),
+      })); // add card obtain timestamp
+
+      saveToCache();
+    } catch (e) {
+      throw e;
+    } finally {
+      isLoading.value = false;
+      setTimeout(() => (isOnCooldown.value = false), COOLDOWN_MS);
+    }
   }
 
   /** Clear cache and force refresh. */
@@ -92,6 +107,7 @@ export const useUserStore = defineStore("user", () => {
     cards.value = null;
     wins.value = null;
     games.value = null;
+    isOnCooldown.value = false;
   }
 
   /** Save current state to cache, */
@@ -115,6 +131,8 @@ export const useUserStore = defineStore("user", () => {
     wins,
     games,
     rank,
+    isLoading,
+    isOnCooldown,
     fetchStats,
     invalidateCache,
   };

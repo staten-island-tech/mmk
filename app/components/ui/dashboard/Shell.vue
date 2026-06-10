@@ -36,34 +36,65 @@
     </main>
 
     <footer
-      class="shrink-0 flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 md:px-6 md:py-4 border-4 border-double border-card-border ring-4 ring-card-ring ring-inset bg-card shadow-transparent-lg"
+      class="shrink-0 flex flex-wrap justify-between items-center p-4 text-slate-500 border-4 border-double border-card-border ring-4 ring-card-ring ring-inset bg-card shadow-transparent-lg"
     >
-      <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
+      <div class="flex items-center gap-x-4 text-sm uppercase">
+        <div class="flex items-center gap-2">
+          <Icon
+            name="pixelarticons:briefcase-account"
+            class="w-4 h-4 text-red-500"
+          />
+          {{ user.cards?.length ?? "--" }}
+          {{ user.cards?.length === 1 ? "card" : "cards" }}
+        </div>
+
+        <div class="flex items-center gap-2">
+          <Icon name="pixelarticons:gamepad" class="w-4 h-4 text-indigo-500" />
+          {{ user.games ?? "--" }} {{ user.games === 1 ? "game" : "games" }}
+        </div>
+
+        <div class="flex items-center gap-2">
+          <Icon name="pixelarticons:trophy" class="w-4 h-4 text-emerald-500" />
+          {{ user.wins ?? "--" }} {{ user.wins === 1 ? "win" : "wins" }}
+        </div>
+
+        <div class="flex items-center gap-2">
+          <Icon
+            name="pixelarticons:cellular-signal-0"
+            class="w-4 h-4 text-sky-500"
+          />
+          {{ user.rank ?? "--" }}
+        </div>
+      </div>
+
+      <button
+        class="flex justify-center items-center p-1 rounded-sm ring-slate-300 transition-all"
+        :class="
+          !user.isLoading && user.isOnCooldown
+            ? 'cursor-not-allowed opacity-50'
+            : 'cursor-pointer hover:ring-4 hover:bg-slate-300'
+        "
+        @click="user.fetchStats(true)"
+      >
         <Icon
-          name="pixelarticons:briefcase-account"
-          class="w-4 h-4 text-red-500"
+          v-if="user.isLoading"
+          name="lucide:loader-circle"
+          class="w-4 h-4 animate-spin"
         />
-        {{ user.cards?.length ?? "--" }}
-        {{ user.cards?.length === 1 ? "card" : "cards" }}
-      </div>
 
-      <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
-        <Icon name="pixelarticons:gamepad" class="w-4 h-4 text-indigo-500" />
-        {{ user.games ?? "--" }} {{ user.games === 1 ? "game" : "games" }}
-      </div>
-
-      <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
-        <Icon name="pixelarticons:trophy" class="w-4 h-4 text-emerald-500" />
-        {{ user.wins ?? "--" }} {{ user.wins === 1 ? "win" : "wins" }}
-      </div>
-
-      <div class="flex items-center gap-2 text-sm uppercase text-slate-500">
         <Icon
-          name="pixelarticons:cellular-signal-0"
-          class="w-4 h-4 text-sky-500"
+          v-else-if="user.isOnCooldown"
+          name="pixelarticons:check"
+          class="w-4 h-4"
         />
-        {{ user.rank ?? "--" }}
-      </div>
+
+        <Icon
+          v-else
+          title="Force-Reload Stats"
+          name="pixelarticons:reload"
+          class="w-4 h-4"
+        />
+      </button>
     </footer>
   </div>
 </template>
