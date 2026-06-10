@@ -11,7 +11,7 @@
       </span>
     </div>
     <div class="flex gap-1 text-sm tracking-wider">
-      <span v-if="move.move.damage" class="font-alt font-semibold"
+      <span v-if="move.move.damage !== null" class="font-alt font-semibold"
         >{{ move.move.damage }} damage</span
       >
       <span v-if="move.move.selfCustomDialogue || move.move.enemyCustomDialogue"

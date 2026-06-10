@@ -19,6 +19,7 @@ export default defineNuxtConfig({
     "@fontsource/rajdhani/700.css",
   ],
   supabase: {
+    types: "./app/types/database.types.ts",
     redirectOptions: {
       login: "/login",
       callback: "/confirm",
@@ -28,8 +29,10 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
+    supabaseSecretKey: "",
     public: {
       authEmailDomain: "",
+      mmkPanelApi: "",
     },
   },
   vite: {

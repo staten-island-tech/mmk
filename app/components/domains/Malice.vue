@@ -1,8 +1,5 @@
 <template>
-  <canvas
-    ref="canvas"
-    class="pointer-events-none w-full h-full"
-  ></canvas>
+  <canvas ref="canvas" class="pointer-events-none w-full h-full"></canvas>
 </template>
 
 <script lang="ts" setup>
@@ -33,7 +30,7 @@ class Slash {
     this.message = Math.random() < 0.1 ? "HOS" : null;
     this.angle = Math.random() * Math.PI * 2;
 
-    this.length = intense ? Math.random() * 300 + 70 : Math.random() *   500 + 30;
+    this.length = intense ? Math.random() * 300 + 70 : Math.random() * 500 + 30;
     this.life = intense ? Math.random() * 20 + 15 : Math.random() * 20 + 10;
     this.thickness = intense ? Math.random() * 5 + 4 : Math.random() * 2 + 1;
     this.speed = intense ? Math.random() * 2 + 4 : Math.random() * 8 + 2.5;
@@ -49,7 +46,7 @@ class Slash {
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    const alpha = Math.max(this.life / 40, 0);
+    const alpha = Math.max(this.life / 200, 0);
 
     ctx.save();
     ctx.translate(this.x, this.y);
@@ -111,7 +108,7 @@ class Splatter {
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    const alpha = this.life / 75;
+    const alpha = this.life / 500;
     ctx.fillStyle = `rgba(160, 0, 0, ${alpha})`;
 
     ctx.beginPath();
@@ -124,6 +121,7 @@ class Splatter {
       if (i === 0) ctx.moveTo(px, py);
       else ctx.lineTo(px, py);
     }
+
     ctx.closePath();
     ctx.fill();
   }
@@ -157,17 +155,17 @@ function animate() {
   const { width, height } = canvas.value;
 
   // Fade the offscreen buffer by eroding alpha — no black fill
-  offCtx.globalCompositeOperation = 'destination-out';
-  offCtx.fillStyle = 'rgba(0, 0, 0, 0.09)';
+  offCtx.globalCompositeOperation = "destination-out";
+  offCtx.fillStyle = "rgba(0, 0, 0, 0.09)";
   offCtx.fillRect(0, 0, width, height);
-  offCtx.globalCompositeOperation = 'source-over';
+  offCtx.globalCompositeOperation = "source-over";
 
   const shakeX = (Math.random() - 0.5) * 3.5;
   const shakeY = (Math.random() - 0.5) * 3.5;
 
   offCtx.save();
   offCtx.translate(shakeX, shakeY);
-  offCtx.globalCompositeOperation = 'lighter';
+  offCtx.globalCompositeOperation = "lighter";
 
   // Draw slashes to offscreen
   for (let i = slashes.length - 1; i >= 0; i--) {
@@ -194,10 +192,10 @@ function animate() {
   ctx.drawImage(offscreen, 0, 0);
 
   // Spawn logic
-  if (Math.random() < 0.5) spawnSlashes(13);
+  if (Math.random() < 0.5) spawnSlashes(2);
   if (Math.random() < 0.085) {
     spawnSlashes(1, true);
-    spawnSplatter(2);
+    spawnSplatter(1);
   }
 
   animationFrameId = requestAnimationFrame(animate);
@@ -206,15 +204,15 @@ function animate() {
 onMounted(() => {
   if (!canvas.value) return;
 
-  ctx = canvas.value.getContext('2d', { alpha: true });
+  ctx = canvas.value.getContext("2d", { alpha: true });
   if (!ctx) return;
 
-  offscreen = document.createElement('canvas');
-  offCtx = offscreen.getContext('2d', { alpha: true });
+  offscreen = document.createElement("canvas");
+  offCtx = offscreen.getContext("2d", { alpha: true });
   if (!offCtx) return;
 
   resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener("resize", resizeCanvas);
 
   spawnSlashes(1);
   spawnSplatter(2);
@@ -224,8 +222,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (animationFrameId) cancelAnimationFrame(animationFrameId);
-  window.removeEventListener('resize', resizeCanvas);
+  window.removeEventListener("resize", resizeCanvas);
 });
 </script>
 
 <style scoped></style>
+
