@@ -14,6 +14,16 @@ export const RaritySchema = z.object({
   desperationConstant: z.number(),
 });
 
+/** Move domain schema. */
+export const MoveDomainSchema = z.object({
+  /** The move domain ID. */
+  id: z.number(),
+  /** The Vue component name to render. */
+  componentName: z.string(),
+  /** How many turns the domain persists. */
+  movePersistenceCount: z.number(),
+});
+
 /** Move schema. */
 export const MoveSchema = z.object({
   /** The move ID. */
@@ -24,6 +34,8 @@ export const MoveSchema = z.object({
   cost: z.number().nullable(),
   /** The move damage. */
   damage: z.number().nullable(),
+  /** Domain triggered by this move. */
+  domain: MoveDomainSchema.nullable(),
 
   // Self properties
   selfDefenseMultiplier: z.tuple([z.number(), z.number()]).nullable(),
@@ -96,6 +108,7 @@ export const CardSchema = z.object({
 });
 
 export type Rarity = z.infer<typeof RaritySchema>;
+export type MoveDomain = z.infer<typeof MoveDomainSchema>;
 export type Move = z.infer<typeof MoveSchema>;
 export type CardMove = z.infer<typeof CardMoveSchema>;
 export type Card = z.infer<typeof CardSchema>;

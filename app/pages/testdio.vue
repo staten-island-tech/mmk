@@ -13,7 +13,11 @@
         </h2>
       </div>
 
-      <div v-else key="battle" class="relative w-full h-full flex flex-col">
+      <div
+        v-else-if="p1Card && p2Card && p1State && p2State"
+        key="battle"
+        class="relative w-full h-full flex flex-col"
+      >
         <Transition name="win">
           <div
             v-if="battleState === 'finished'"
@@ -43,7 +47,7 @@
                     ? 'border-game-p1-accent'
                     : 'border-game-p2-accent'
                 "
-                @click="resetBattle"
+                @click="battle.resetBattle()"
               >
                 Play Again
               </button>
@@ -51,12 +55,16 @@
           </div>
         </Transition>
 
-        <!-- Domain overlay -->
-        <component
-          v-if="activeDomain && domainComponentMap[activeDomain.componentName]"
-          :is="domainComponentMap[activeDomain.componentName]"
-          class="absolute inset-0 z-30 pointer-events-none"
-        />
+        <!-- Domain effect -->
+        <Transition name="fade-battle" mode="out-in">
+          <component
+            v-if="
+              activeDomain && domainComponentMap[activeDomain.componentName]
+            "
+            :is="domainComponentMap[activeDomain.componentName]"
+            class="z-10 absolute inset-0 pointer-events-none"
+          />
+        </Transition>
         <div
           class="flex flex-col gap-2 absolute top-4 left-4 z-50 bg-black text-white text-xs p-2 font-mono"
         >
@@ -75,25 +83,29 @@
 
         <!-- Battlefield -->
         <div
-          class="overflow-hidden relative grid h-3/4 grid-cols-2 grid-rows-2 p-12 transition-colors duration-700"
-          :class="isMaliceActive ? '' : 'bg-slate-100'"
+          class="z-20 overflow-hidden relative grid h-3/4 grid-cols-2 grid-rows-2 p-12 transition-colors duration-700"
+          :class="{
+            'bg-slate-100': !activeDomain,
+            'bg-transparent': activeDomain,
+          }"
           :style="{
-            backgroundColor: isMaliceActive ? '#1a0000' : undefined,
-            backgroundImage: isMaliceActive
-              ? 'linear-gradient(#3d0a0a 1px, transparent 1px), linear-gradient(90deg, #3d0a0a 1px, transparent 1px)'
+            backgroundImage: activeDomain
+              ? 'linear-gradient(rgba(100, 116, 139, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(100, 116, 139, 0.1) 1px, transparent 1px)'
               : 'linear-gradient(#cbd5e1 1px, transparent 1px), linear-gradient(90deg, #cbd5e1 1px, transparent 1px)',
             backgroundSize: '64px 64px',
           }"
         >
           <!-- Ground -->
           <div
-            class="absolute bottom-0 left-1/2 w-[300%] h-96 origin-bottom transition-colors duration-700"
-            :class="isMaliceActive ? '' : 'bg-slate-200'"
+            class="z-20 absolute bottom-0 left-1/2 w-[300%] h-96 origin-bottom transition-colors duration-700"
+            :class="{
+              'bg-slate-200': !activeDomain,
+              'bg-slate-600/10': activeDomain,
+            }"
             :style="{
               transform: 'translateX(-50%) perspective(350px) rotateX(45deg)',
-              backgroundColor: isMaliceActive ? '#2a0505' : undefined,
-              backgroundImage: isMaliceActive
-                ? 'linear-gradient(#4a1010 1px, transparent 1px), linear-gradient(90deg, #4a1010 1px, transparent 1px)'
+              backgroundImage: activeDomain
+                ? 'linear-gradient(rgba(100, 116, 139, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(100, 116, 139, 0.3) 1px, transparent 1px)'
                 : 'linear-gradient(#94a3b8 1px, transparent 1px), linear-gradient(90deg, #94a3b8 1px, transparent 1px)',
               backgroundSize: '8rem 8rem',
               maskImage:
@@ -107,7 +119,7 @@
           <div class="flex items-start justify-start p-5 z-10">
             <UiGameplayCardDisplay
               :card="p2Card"
-              :state="p2State!"
+              :state="p2State"
               :is-active="currentPlayer === 2 && battleState === 'player_turn'"
               playerLabel="Player 2"
               :accent="2"
@@ -118,7 +130,7 @@
           <div class="flex items-start justify-end p-5 z-10">
             <UiGameplayCardDisplay
               :card="p1Card"
-              :state="p1State!"
+              :state="p1State"
               :is-active="currentPlayer === 1 && battleState === 'player_turn'"
               playerLabel="Player 1"
               :accent="1"
@@ -128,7 +140,7 @@
 
           <!-- Player 2 sprite -->
           <div
-            class="flex items-end justify-start pl-32 z-10"
+            class="z-30 flex items-end justify-start pl-32"
             :class="{
               'sprite-active':
                 currentPlayer === 2 && battleState === 'player_turn',
@@ -148,7 +160,7 @@
 
           <!-- Player 1 sprite -->
           <div
-            class="flex items-end justify-end pr-32 z-10"
+            class="z-30 flex items-end justify-end pr-32"
             :class="{
               'sprite-active':
                 currentPlayer === 1 && battleState === 'player_turn',
@@ -168,7 +180,7 @@
         </div>
 
         <!-- Bottom panel -->
-        <UiCardSimple class="p-8 w-full h-1/4 !max-w-full">
+        <UiCardSimple class="z-20 p-8 w-full h-1/4 !max-w-full">
           <div
             v-if="battleState === 'dialogue' && currentDialogue"
             class="h-full min-h-0"
@@ -242,9 +254,7 @@
           </div>
 
           <!-- Idle -->
-          <div v-else class="idle-panel">
-            <span class="text-xs tracking-wide">Idle</span>
-          </div>
+          <div v-else>Idle...</div>
         </UiCardSimple>
       </div>
     </Transition>
@@ -253,6 +263,12 @@
 
 <script setup lang="ts">
 import type { Card, CardMove } from "~/types/collection";
+import type {
+  BattleState,
+  PlayerState,
+  ActiveDomain,
+  DialogueLine,
+} from "~/types/game";
 
 const config = useRuntimeConfig();
 
@@ -260,54 +276,23 @@ const p1Card = ref<Card | null>(null);
 const p2Card = ref<Card | null>(null);
 const isLoading = ref(true);
 
-interface ActiveEffect {
-  type:
-    | "attackMul"
-    | "defenseMul"
-    | "energyMul"
-    | "energyGainMul"
-    | "desperationMul"
-    | "attackAdd"
-    | "defenseAdd"
-    | "energyAdd"
-    | "energyGainAdd"
-    | "desperationAdd"
-    | "poison";
-  value: number;
-  turnsLeft: number;
-}
+const p1State = ref<PlayerState | null>(null);
+const p2State = ref<PlayerState | null>(null);
+const activeDomain = ref<ActiveDomain | null>(null);
+const domainJustActivated = ref<boolean>(false);
+const currentPlayer = ref<1 | 2>(1);
+const battleState = ref<BattleState>("player_turn");
+const winner = ref<1 | 2 | null>(null);
 
-interface PlayerState {
-  hp: number;
-  maxHp: number;
-  moveEnergy: number;
-  maxMoveEnergy: number;
-  moveEnergyGain: number;
-  defense: number;
-  attack: number;
-  activeEffects: ActiveEffect[];
-  preventedTurns: number;
-  poisonTurns: number;
-  poisonMultiplier: number;
-  infiniteHealthTurns: number;
-}
+const dialogueQueue = ref<DialogueLine[]>([]);
+const currentDialogue = ref<DialogueLine | null>(null);
+let afterDialogueCallback: (() => void) | null = null;
 
-interface ActiveDomain {
-  componentName: string;
-  turnsLeft: number;
-}
+const effectsMessage = ref("");
 
-interface DialogueLine {
-  speaker: string;
-  text: string;
-}
+const preventedMessage = ref<string>("");
 
-type BattleState =
-  | "player_turn"
-  | "dialogue"
-  | "effects"
-  | "prevented"
-  | "finished";
+const audioRef = ref<HTMLAudioElement | null>(null);
 
 const domainComponentMap: Record<
   string,
@@ -320,10 +305,6 @@ const domainComponentMap: Record<
   DomainsEntropy: resolveComponent("DomainsEntropy"),
 };
 
-const isMaliceActive = computed( // this one is not WebGL-based, so it has some exceptions
-  () => activeDomain.value?.componentName === "DomainsMalice",
-);
-
 const currentMoves = computed<CardMove[]>(() => {
   if (!p1Card.value || !p2Card.value) return [];
   return currentPlayer.value === 1 ? p1Card.value.moves : p2Card.value.moves;
@@ -333,59 +314,43 @@ const currentPlayerState = computed<PlayerState>(() => {
   return currentPlayer.value === 1 ? p1State.value! : p2State.value!;
 });
 
-function calcRarityDefenseBonus(a: Card, b: Card): [number, number] {
-  if (a.rarity.weight === b.rarity.weight) return [0, 0];
-  const bonus =
-    3 *
-    (Math.max(a.desperation, b.desperation) -
-      Math.min(a.desperation, b.desperation));
-  const isP1Lower = a.rarity.weight < b.rarity.weight;
-  return isP1Lower ? [bonus, 0] : [0, bonus];
-}
+const battle = useBattleEngine(
+  // game engine and utils
+  p1State,
+  p2State,
+  p1Card,
+  p2Card,
+  currentPlayer,
+  battleState,
+  winner,
+  activeDomain,
+  domainJustActivated,
+  effectsMessage,
+);
 
-function makePlayerState(card: Card, rarityBonus: number): PlayerState {
-  return {
-    hp: card.health,
-    maxHp: card.health,
-    moveEnergy: card.baseMoveEnergy,
-    maxMoveEnergy: 100,
-    moveEnergyGain: card.baseMoveEnergyGain,
-    defense: card.defense + rarityBonus,
-    attack: 1.0,
-    activeEffects: [],
-    preventedTurns: 0,
-    poisonTurns: 0,
-    poisonMultiplier: 1,
-    infiniteHealthTurns: 0,
+function selectMove(cardMove: CardMove) {
+  if (battleState.value !== "player_turn") return;
+
+  const move = cardMove.move;
+
+  const selfCard = currentPlayer.value === 1 ? p1Card.value! : p2Card.value!;
+  const enemyCard = currentPlayer.value === 1 ? p2Card.value! : p1Card.value!;
+
+  dialogueQueue.value = [];
+
+  if (move.selfCustomDialogue)
+    enqueueDialogue(selfCard.name, move.selfCustomDialogue);
+
+  if (move.enemyCustomDialogue)
+    enqueueDialogue(enemyCard.name, move.enemyCustomDialogue);
+
+  const runMoveExecution = () => {
+    battle.executeMove(move);
   };
+
+  if (dialogueQueue.value.length > 0) startDialogueQueue(runMoveExecution);
+  else runMoveExecution();
 }
-
-function initializeBattle() {
-  if (!p1Card.value || !p2Card.value) return;
-
-  const [p1RarityBonus, p2RarityBonus] = calcRarityDefenseBonus(
-    p1Card.value,
-    p2Card.value,
-  );
-
-  p1State.value = makePlayerState(p1Card.value, p1RarityBonus);
-  p2State.value = makePlayerState(p2Card.value, p2RarityBonus);
-
-  currentPlayer.value = Math.random() < 0.5 ? 1 : 2;
-  skipToValidTurn();
-  isLoading.value = false;
-}
-
-const p1State = ref<PlayerState | null>(null);
-const p2State = ref<PlayerState | null>(null);
-const activeDomain = ref<ActiveDomain | null>(null);
-const currentPlayer = ref<1 | 2>(1);
-const battleState = ref<BattleState>("player_turn");
-const winner = ref<1 | 2 | null>(null);
-
-const dialogueQueue = ref<DialogueLine[]>([]);
-const currentDialogue = ref<DialogueLine | null>(null);
-let afterDialogueCallback: (() => void) | null = null;
 
 function enqueueDialogue(speaker: string, rawText: string) {
   const parts = rawText.split(/\$\$BREAK\$\$/i);
@@ -418,23 +383,9 @@ function onDialogueFinished() {
   advanceDialogue();
 }
 
-const effectsMessage = ref<string>("");
-let afterEffectsCallback: (() => void) | null = null;
-
-function showEffects(message: string, onDone: () => void) {
-  effectsMessage.value = message;
-  battleState.value = "effects";
-  afterEffectsCallback = onDone;
-}
-
 function onEffectsFinished() {
-  effectsMessage.value = "";
-  battleState.value = "player_turn";
-  afterEffectsCallback?.();
-  afterEffectsCallback = null;
+  battle.onEffectsFinished();
 }
-
-const preventedMessage = ref("");
 
 function onPreventedFinished() {
   if (!p1State.value || !p2State.value) return;
@@ -445,348 +396,9 @@ function onPreventedFinished() {
     stateRef.value!.preventedTurns - 1,
   );
 
-  regenEnergyAndPoison(stateRef);
-  tickEffects(stateRef);
-  switchTurn();
-}
-
-function getEffectiveStat(
-  state: PlayerState,
-  type: "attack" | "defense" | "energyGain",
-): number {
-  const mulType =
-    type === "attack"
-      ? "attackMul"
-      : type === "defense"
-        ? "defenseMul"
-        : "energyGainMul";
-  const addType =
-    type === "attack"
-      ? "attackAdd"
-      : type === "defense"
-        ? "defenseAdd"
-        : "energyGainAdd";
-
-  let mul = 1.0;
-  let add = 0;
-
-  for (const e of state.activeEffects) {
-    if (e.type === mulType) mul *= e.value;
-    if (e.type === addType) add += e.value;
-  }
-
-  if (type === "attack") return mul + add;
-  const base = type === "defense" ? state.defense : state.moveEnergyGain;
-
-  return base * mul + add;
-}
-
-function calcDamage(
-  attacker: PlayerState,
-  move: { damage: number | null },
-  defender: PlayerState,
-): number {
-  if (!move.damage) return 0;
-
-  const atkMul = getEffectiveStat(attacker, "attack");
-  const atkAdd = attacker.activeEffects
-    .filter((e) => e.type === "attackAdd")
-    .reduce((s, e) => s + e.value, 0);
-  const def = getEffectiveStat(defender, "defense");
-
-  return Math.max(
-    0,
-    Math.round((move.damage * atkMul + atkAdd) * (1 - def / 100)),
-  );
-}
-
-function applyEffectsFromMove(
-  move: CardMove["move"],
-  selfRef: typeof p1State,
-  enemyRef: typeof p2State,
-) {
-  if (!selfRef.value || !enemyRef.value) return;
-  const s = selfRef.value;
-  const e = enemyRef.value;
-
-  if (move.domainComponentName && move.domainLength) {
-    // change active domain
-    activeDomain.value = {
-      componentName: move.domainComponentName,
-      turnsLeft: move.domainLength,
-    };
-  }
-
-  if (move.selfAttackMultiplier)
-    s.activeEffects.push({
-      type: "attackMul",
-      value: move.selfAttackMultiplier[0],
-      turnsLeft: move.selfAttackMultiplier[1],
-    });
-  if (move.selfDefenseMultiplier)
-    s.activeEffects.push({
-      type: "defenseMul",
-      value: move.selfDefenseMultiplier[0],
-      turnsLeft: move.selfDefenseMultiplier[1],
-    });
-  if (move.selfMoveEnergyGainMultiplier)
-    s.activeEffects.push({
-      type: "energyGainMul",
-      value: move.selfMoveEnergyGainMultiplier[0],
-      turnsLeft: move.selfMoveEnergyGainMultiplier[1],
-    });
-  if (move.selfMoveEnergyMultiplier)
-    s.activeEffects.push({
-      type: "energyMul",
-      value: move.selfMoveEnergyMultiplier[0],
-      turnsLeft: move.selfMoveEnergyMultiplier[1],
-    });
-  if (move.selfAttackScalarBoost)
-    s.activeEffects.push({
-      type: "attackAdd",
-      value: move.selfAttackScalarBoost[0],
-      turnsLeft: move.selfAttackScalarBoost[1],
-    });
-  if (move.selfDefenseScalarBoost)
-    s.activeEffects.push({
-      type: "defenseAdd",
-      value: move.selfDefenseScalarBoost[0],
-      turnsLeft: move.selfDefenseScalarBoost[1],
-    });
-  if (move.selfMoveEnergyGainScalarBoost)
-    s.activeEffects.push({
-      type: "energyGainAdd",
-      value: move.selfMoveEnergyGainScalarBoost[0],
-      turnsLeft: move.selfMoveEnergyGainScalarBoost[1],
-    });
-  if (move.selfPoison) {
-    s.poisonTurns = move.selfPoison[1];
-    s.poisonMultiplier = move.selfPoison[0];
-  }
-  if (move.selfPreventMove) s.preventedTurns = move.selfPreventMove;
-
-  if (move.enemyAttackMultiplier)
-    e.activeEffects.push({
-      type: "attackMul",
-      value: move.enemyAttackMultiplier[0],
-      turnsLeft: move.enemyAttackMultiplier[1],
-    });
-  if (move.enemyDefenseMultiplier)
-    e.activeEffects.push({
-      type: "defenseMul",
-      value: move.enemyDefenseMultiplier[0],
-      turnsLeft: move.enemyDefenseMultiplier[1],
-    });
-  if (move.enemyMoveEnergyGainMultiplier)
-    e.activeEffects.push({
-      type: "energyGainMul",
-      value: move.enemyMoveEnergyGainMultiplier[0],
-      turnsLeft: move.enemyMoveEnergyGainMultiplier[1],
-    });
-  if (move.enemyMoveEnergyMultiplier)
-    e.activeEffects.push({
-      type: "energyMul",
-      value: move.enemyMoveEnergyMultiplier[0],
-      turnsLeft: move.enemyMoveEnergyMultiplier[1],
-    });
-  if (move.enemyAttackScalarBoost)
-    e.activeEffects.push({
-      type: "attackAdd",
-      value: move.enemyAttackScalarBoost[0],
-      turnsLeft: move.enemyAttackScalarBoost[1],
-    });
-  if (move.enemyDefenseScalarBoost)
-    e.activeEffects.push({
-      type: "defenseAdd",
-      value: move.enemyDefenseScalarBoost[0],
-      turnsLeft: move.enemyDefenseScalarBoost[1],
-    });
-  if (move.enemyMoveEnergyGainScalarBoost)
-    e.activeEffects.push({
-      type: "energyGainAdd",
-      value: move.enemyMoveEnergyGainScalarBoost[0],
-      turnsLeft: move.enemyMoveEnergyGainScalarBoost[1],
-    });
-  if (move.enemyPoison) {
-    e.poisonTurns = move.enemyPoison[1];
-    e.poisonMultiplier = move.enemyPoison[0];
-  }
-  if (move.enemyPreventMove) e.preventedTurns = move.enemyPreventMove;
-}
-
-function tickEffects(stateRef: typeof p1State) {
-  if (!stateRef.value) return;
-
-  stateRef.value.activeEffects = stateRef.value.activeEffects
-    .map((e) => ({ ...e, turnsLeft: e.turnsLeft - 1 }))
-    .filter((e) => e.turnsLeft > 0);
-
-  if (activeDomain.value) {
-    activeDomain.value.turnsLeft--;
-    if (activeDomain.value.turnsLeft <= 0) activeDomain.value = null;
-  }
-}
-
-function regenEnergyAndPoison(stateRef: typeof p1State) {
-  if (!stateRef.value) return;
-
-  const s = stateRef.value;
-  s.moveEnergy = Math.min(
-    s.maxMoveEnergy,
-    s.moveEnergy + getEffectiveStat(s, "energyGain"),
-  );
-
-  if (s.poisonTurns > 0) {
-    if (s.infiniteHealthTurns <= 0)
-      s.hp = Math.round(s.hp * s.poisonMultiplier);
-    s.poisonTurns--;
-    if (s.poisonTurns === 0) s.poisonMultiplier = 1;
-  }
-
-  if (s.infiniteHealthTurns > 0) {
-    s.infiniteHealthTurns--;
-    s.hp = 999999;
-    s.maxHp = 999999;
-  }
-}
-
-function buildEffectsMessage(p1: PlayerState, p2: PlayerState): string {
-  if (!p1Card.value || !p2Card.value) return "";
-
-  const lines: string[] = [];
-  const typeLabel: Record<string, string> = {
-    attackMul: "ATK ×",
-    defenseMul: "DEF ×",
-    energyGainMul: "Energy Gain ×",
-    energyMul: "Energy ×",
-    attackAdd: "ATK +",
-    defenseAdd: "DEF +",
-    energyGainAdd: "Energy Gain +",
-    energyAdd: "Energy +",
-  };
-
-  for (const [label, s] of [
-    [p1Card.value.name, p1],
-    [p2Card.value.name, p2],
-  ] as [string, PlayerState][]) {
-    for (const e of s.activeEffects) {
-      const tl = typeLabel[e.type];
-      if (tl)
-        lines.push(
-          `${label}: ${tl}${e.value} for ${e.turnsLeft} more turn${e.turnsLeft !== 1 ? "s" : ""}`,
-        );
-    }
-
-    if (s.poisonTurns > 0)
-      lines.push(
-        `${label}: Poisoned (×${s.poisonMultiplier}) for ${s.poisonTurns} more turn${s.poisonTurns !== 1 ? "s" : ""}`,
-      );
-    if (s.preventedTurns > 0)
-      lines.push(
-        `${label}: Cannot move for ${s.preventedTurns} more turn${s.preventedTurns !== 1 ? "s" : ""}`,
-      );
-    if (s.infiniteHealthTurns > 0)
-      lines.push(
-        `${label}: INFINITE HEALTH for ${s.infiniteHealthTurns} more turn${s.infiniteHealthTurns !== 1 ? "s" : ""}`,
-      );
-  }
-
-  return lines.join("\n");
-}
-
-function skipToValidTurn() {
-  if (!p1State.value || !p2State.value) return;
-  const state = currentPlayer.value === 1 ? p1State.value : p2State.value;
-  battleState.value = state.preventedTurns > 0 ? "prevented" : "player_turn";
-}
-
-function switchTurn() {
-  currentPlayer.value = currentPlayer.value === 1 ? 2 : 1;
-  skipToValidTurn();
-}
-
-function selectMove(cardMove: CardMove) {
-  if (
-    battleState.value !== "player_turn" ||
-    !p1State.value ||
-    !p2State.value ||
-    !p1Card.value ||
-    !p2Card.value
-  )
-    return;
-
-  const selfRef = currentPlayer.value === 1 ? p1State : p2State;
-  const enemyRef = currentPlayer.value === 1 ? p2State : p1State;
-  const selfCard = currentPlayer.value === 1 ? p1Card : p2Card;
-  const move = cardMove.move;
-
-  if (move.cost !== null)
-    selfRef.value!.moveEnergy = Math.max(
-      0,
-      selfRef.value!.moveEnergy - move.cost,
-    );
-
-  dialogueQueue.value = [];
-  if (move.selfCustomDialogue)
-    enqueueDialogue(selfCard.value!.name, move.selfCustomDialogue);
-  if (move.enemyCustomDialogue)
-    enqueueDialogue(
-      selfCard === p1Card ? p2Card.value!.name : p1Card.value!.name,
-      move.enemyCustomDialogue,
-    );
-
-  const runMoveExecution = () => {
-    let jackpotHit = false;
-    if (move.id === 34 && Math.floor(Math.random() * 239) === 0) {
-      jackpotHit = true;
-      selfRef.value!.hp = 999999;
-      selfRef.value!.maxHp = 999999;
-      selfRef.value!.infiniteHealthTurns = 10;
-    }
-
-    if (move.damage) {
-      const dmg = calcDamage(selfRef.value!, move, enemyRef.value!);
-      enemyRef.value!.hp = Math.max(0, enemyRef.value!.hp - dmg);
-    }
-
-    applyEffectsFromMove(move, selfRef, enemyRef);
-
-    if (selfRef.value!.hp <= 0) {
-      winner.value = currentPlayer.value === 1 ? 2 : 1;
-      battleState.value = "finished";
-      return;
-    }
-    if (enemyRef.value!.hp <= 0) {
-      winner.value = currentPlayer.value;
-      battleState.value = "finished";
-      return;
-    }
-
-    regenEnergyAndPoison(selfRef);
-    tickEffects(selfRef);
-
-    const afterJackpot = (next: () => void) => {
-      if (!jackpotHit) {
-        next();
-        return;
-      }
-      dialogueQueue.value = [];
-      enqueueDialogue(
-        selfCard.value!.name,
-        "HOLD UP. WAIT, I JUST HIT THE JACKPOT.",
-      );
-      startDialogueQueue(next);
-    };
-
-    const msg = buildEffectsMessage(p1State.value!, p2State.value!);
-    afterJackpot(() => {
-      if (msg) showEffects(msg, () => switchTurn());
-      else switchTurn();
-    });
-  };
-
-  if (dialogueQueue.value.length > 0) startDialogueQueue(runMoveExecution);
-  else runMoveExecution();
+  battle.regenEnergyAndPoison(stateRef);
+  battle.tickEffects(stateRef);
+  battle.switchTurn();
 }
 
 watch(battleState, (val) => {
@@ -796,19 +408,6 @@ watch(battleState, (val) => {
     preventedMessage.value = `${name} is unable to move this turn.`;
   }
 });
-
-function resetBattle() {
-  if (p1Card.value && p2Card.value) {
-    initializeBattle();
-    winner.value = null;
-    dialogueQueue.value = [];
-    currentDialogue.value = null;
-    effectsMessage.value = "";
-    activeDomain.value = null;
-  }
-}
-
-const audioRef = ref<HTMLAudioElement | null>(null);
 
 function resolveAudioSrc(): string | null {
   if (!p1Card.value || !p2Card.value) return null;
@@ -842,7 +441,11 @@ onMounted(async () => {
     p2Card.value = p2Data[0] || null;
 
     if (p1Card.value && p2Card.value) {
-      initializeBattle();
+      p1State.value = battle.createPlayerState(p1Card.value);
+      p2State.value = battle.createPlayerState(p2Card.value);
+
+      battle.initializeBattle();
+
       const src = resolveAudioSrc();
       if (src) {
         const audio = new Audio(src);
@@ -853,12 +456,13 @@ onMounted(async () => {
             audio.play();
             window.removeEventListener("pointerdown", resume);
           };
+
           window.addEventListener("pointerdown", resume);
         });
         audioRef.value = audio;
       }
     }
-  } catch (e) {
+  } catch (_) {
     isLoading.value = false;
   }
 });

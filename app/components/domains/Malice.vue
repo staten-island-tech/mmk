@@ -1,230 +1,149 @@
 <template>
-  <canvas ref="canvas" class="pointer-events-none w-full h-full"></canvas>
+  <div class="pointer-events-none z-0 fixed inset-0">
+    <canvas ref="canvasRef" class="block w-full h-full" />
+  </div>
 </template>
 
-<script lang="ts" setup>
-const canvas = ref<HTMLCanvasElement | null>(null);
+<script setup lang="ts">
+const canvasRef = ref<HTMLCanvasElement | null>(null);
+const shaderStore = useShaderStore();
 
-let ctx: CanvasRenderingContext2D | null = null;
-let offscreen: HTMLCanvasElement | null = null;
-let offCtx: CanvasRenderingContext2D | null = null;
-let animationFrameId: number | null = null;
+const vsSource = `
+attribute vec2 a_position;
+void main() {
+  gl_Position = vec4(a_position, 0.0, 1.0);
+}
+`;
 
-let slashes: Slash[] = [];
-let splatters: Splatter[] = [];
+const fsSource = `
+precision mediump float;
 
-class Slash {
-  x: number;
-  y: number;
-  angle: number;
-  length: number;
-  life: number;
-  thickness: number;
-  speed: number;
-  jitter: number;
-  message: string | null;
+uniform float t;
+uniform vec2 r;
 
-  constructor(width: number, height: number, intense = false) {
-    this.x = Math.random() * width;
-    this.y = Math.random() * height;
-    this.message = Math.random() < 0.1 ? "HOS" : null;
-    this.angle = Math.random() * Math.PI * 2;
-
-    this.length = intense ? Math.random() * 300 + 70 : Math.random() * 500 + 30;
-    this.life = intense ? Math.random() * 20 + 15 : Math.random() * 20 + 10;
-    this.thickness = intense ? Math.random() * 5 + 4 : Math.random() * 2 + 1;
-    this.speed = intense ? Math.random() * 2 + 4 : Math.random() * 8 + 2.5;
-    this.jitter = Math.random() * 30;
-  }
-
-  update() {
-    this.life--;
-    this.x += Math.cos(this.angle) * this.speed;
-    this.y += Math.sin(this.angle) * this.speed;
-    this.x += (Math.random() - 0.5) * 2;
-    this.y += (Math.random() - 0.5) * 2;
-  }
-
-  draw(ctx: CanvasRenderingContext2D) {
-    const alpha = Math.max(this.life / 200, 0);
-
-    ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.angle);
-
-    // Outer glow
-    ctx.strokeStyle = `rgba(255, 40, 40, ${alpha * 0.35})`;
-    ctx.lineWidth = this.thickness * 2.8;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(this.length, 0);
-    ctx.stroke();
-
-    // Slash
-    ctx.strokeStyle = `rgba(255, 0, 0, ${alpha})`;
-    ctx.lineWidth = this.thickness;
-    ctx.beginPath();
-
-    let x = 0;
-    let y = 0;
-    ctx.moveTo(x, y);
-
-    for (let i = 0; i < 7; i++) {
-      x += this.length / 7;
-      y += (Math.random() - 0.5) * this.jitter;
-      ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-
-    if (this.message && alpha > 0.25) {
-      ctx.font = `bold ${13 + this.thickness}px monospace`;
-      ctx.fillStyle = `rgba(255, 70, 70, ${alpha})`;
-      ctx.shadowColor = "#ff0000";
-      ctx.shadowBlur = 15;
-      ctx.fillText(this.message, 8, 24);
-      ctx.shadowBlur = 0;
-    }
-
-    ctx.restore();
-  }
+float hash(vec2 p) {
+  return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-class Splatter {
-  x: number;
-  y: number;
-  radius: number;
-  life: number;
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
 
-  constructor(width: number, height: number) {
-    this.x = Math.random() * width;
-    this.y = Math.random() * height;
-    this.radius = Math.random() * 24 + 8;
-    this.life = Math.random() * 14 + 24;
-  }
+  f = f * f * (3.0 - 2.0 * f);
 
-  update() {
-    this.life--;
-    this.radius *= 0.975;
-  }
+  float a = hash(i);
+  float b = hash(i + vec2(1.0, 0.0));
+  float c = hash(i + vec2(0.0, 1.0));
+  float d = hash(i + vec2(1.0, 1.0));
 
-  draw(ctx: CanvasRenderingContext2D) {
-    const alpha = this.life / 500;
-    ctx.fillStyle = `rgba(160, 0, 0, ${alpha})`;
-
-    ctx.beginPath();
-    const points = 8;
-    for (let i = 0; i <= points; i++) {
-      const a = (i / points) * Math.PI * 2;
-      const r = this.radius + (Math.random() - 0.5) * 6;
-      const px = this.x + Math.cos(a) * r;
-      const py = this.y + Math.sin(a) * r;
-      if (i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    }
-
-    ctx.closePath();
-    ctx.fill();
-  }
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
 }
 
-function resizeCanvas() {
-  if (!canvas.value || !offscreen) return;
-  canvas.value.width = canvas.value.clientWidth;
-  canvas.value.height = canvas.value.clientHeight;
-  offscreen.width = canvas.value.width;
-  offscreen.height = canvas.value.height;
+float fbm(vec2 p) {
+  float v = 0.0;
+  float a = 0.5;
+  for (int i = 0; i < 4; i++) {
+    v += a * noise(p);
+    p *= 2.0;
+    a *= 0.5;
+  }
+
+  return v;
 }
 
-function spawnSlashes(count: number, intense = false) {
-  if (!canvas.value) return;
-  for (let i = 0; i < count; i++) {
-    slashes.push(new Slash(canvas.value.width, canvas.value.height, intense));
-  }
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * r) / r.y;
+  float time = t * 0.6;
+
+  vec3 color = vec3(0.04, 0.0, 0.0);
+
+  vec2 q = uv;
+  q.x += fbm(q + time) * 0.15;
+  q.y += fbm(q + time + 1.0) * 0.15;
+
+  float dist = length(q);
+
+  float wave = sin(dist * 12.0 - time * 3.5);
+  wave = smoothstep(0.7, 1.0, wave) * exp(-dist * 1.5);
+
+  float corePulse = 0.8 + 0.2 * sin(time * 5.0);
+  float core = exp(-dist * 7.5) * corePulse;
+
+  float angle = atan(q.y, q.x);
+  float rays = sin(angle * 14.0 + time * 2.0 + fbm(q * 3.0) * 6.0);
+  rays = smoothstep(0.4, 1.0, rays) * core * 1.5;
+
+  vec3 coreColor = vec3(1.0, 0.95, 0.8) * core * 2.2;
+  vec3 waveColor = vec3(0.9, 0.15, 0.05) * wave;
+  vec3 rayColor = vec3(0.7, 0.0, 0.0) * rays;
+
+  color += coreColor + waveColor + rayColor;
+
+  float vignette = 1.0 - smoothstep(0.4, 1.4, length(uv));
+  color *= vignette;
+
+  gl_FragColor = vec4(color, 1.0);
 }
+`;
 
-function spawnSplatter(count: number) {
-  if (!canvas.value) return;
-  for (let i = 0; i < count; i++) {
-    splatters.push(new Splatter(canvas.value.width, canvas.value.height));
+function startRenderLoop(canvas: HTMLCanvasElement) {
+  function render() {
+    const { gl, program, timeLocation, resolutionLocation, startTime } =
+      shaderStore;
+    if (!gl || !program || !timeLocation || !resolutionLocation) return;
+
+    const time = (performance.now() - startTime) / 1000;
+    gl.uniform1f(timeLocation, time);
+    gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    shaderStore.animationFrame = requestAnimationFrame(render);
   }
-}
-
-function animate() {
-  if (!ctx || !offCtx || !canvas.value || !offscreen) return;
-
-  const { width, height } = canvas.value;
-
-  // Fade the offscreen buffer by eroding alpha — no black fill
-  offCtx.globalCompositeOperation = "destination-out";
-  offCtx.fillStyle = "rgba(0, 0, 0, 0.09)";
-  offCtx.fillRect(0, 0, width, height);
-  offCtx.globalCompositeOperation = "source-over";
-
-  const shakeX = (Math.random() - 0.5) * 3.5;
-  const shakeY = (Math.random() - 0.5) * 3.5;
-
-  offCtx.save();
-  offCtx.translate(shakeX, shakeY);
-  offCtx.globalCompositeOperation = "lighter";
-
-  // Draw slashes to offscreen
-  for (let i = slashes.length - 1; i >= 0; i--) {
-    const s = slashes[i];
-    if (!s) continue;
-    s.update();
-    s.draw(offCtx);
-    if (s.life <= 0) slashes.splice(i, 1);
-  }
-
-  // Draw splatters to offscreen
-  for (let i = splatters.length - 1; i >= 0; i--) {
-    const sp = splatters[i];
-    if (!sp) continue;
-    sp.update();
-    sp.draw(offCtx);
-    if (sp.life <= 0) splatters.splice(i, 1);
-  }
-
-  offCtx.restore();
-
-  // Clear main canvas fully transparent, then composite offscreen on top
-  ctx.clearRect(0, 0, width, height);
-  ctx.drawImage(offscreen, 0, 0);
-
-  // Spawn logic
-  if (Math.random() < 0.5) spawnSlashes(2);
-  if (Math.random() < 0.085) {
-    spawnSlashes(1, true);
-    spawnSplatter(1);
-  }
-
-  animationFrameId = requestAnimationFrame(animate);
+  render();
 }
 
 onMounted(() => {
-  if (!canvas.value) return;
+  const canvas = canvasRef.value;
+  if (!canvas || import.meta.server) return;
 
-  ctx = canvas.value.getContext("2d", { alpha: true });
-  if (!ctx) return;
+  const context = canvas.getContext("webgl");
+  if (!context) return;
+  shaderStore.gl = context;
 
-  offscreen = document.createElement("canvas");
-  offCtx = offscreen.getContext("2d", { alpha: true });
-  if (!offCtx) return;
+  const prog = shaderStore.createProgram(context, vsSource, fsSource);
+  if (!prog) return;
+  shaderStore.program = prog;
 
-  resizeCanvas();
-  window.addEventListener("resize", resizeCanvas);
+  context.useProgram(prog);
 
-  spawnSlashes(1);
-  spawnSplatter(2);
+  shaderStore.positionLocation = context.getAttribLocation(prog, "a_position");
+  shaderStore.timeLocation = context.getUniformLocation(prog, "t");
+  shaderStore.resolutionLocation = context.getUniformLocation(prog, "r");
 
-  animate();
+  const vertices = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
+  shaderStore.setupVertexBuffer(vertices);
+  context.enableVertexAttribArray(shaderStore.positionLocation);
+  context.vertexAttribPointer(
+    shaderStore.positionLocation,
+    2,
+    context.FLOAT,
+    false,
+    0,
+    0,
+  );
+
+  shaderStore.resizeCanvas(canvas);
+  window.addEventListener("resize", () => shaderStore.resizeCanvas(canvas));
+
+  shaderStore.startTime = performance.now();
+  startRenderLoop(canvas);
 });
 
-onBeforeUnmount(() => {
-  if (animationFrameId) cancelAnimationFrame(animationFrameId);
-  window.removeEventListener("resize", resizeCanvas);
+onUnmounted(() => {
+  if (shaderStore.animationFrame)
+    cancelAnimationFrame(shaderStore.animationFrame);
 });
 </script>
 
 <style scoped></style>
-
