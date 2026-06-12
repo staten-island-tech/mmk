@@ -62,6 +62,7 @@
               activeDomain && domainComponentMap[activeDomain.componentName]
             "
             :is="domainComponentMap[activeDomain.componentName]"
+            ref="domainComponent"
             class="z-10 absolute inset-0 pointer-events-none"
           />
         </Transition>
@@ -83,35 +84,39 @@
 
         <!-- Battlefield -->
         <div
-          class="z-20 overflow-hidden relative grid h-3/4 grid-cols-2 grid-rows-2 p-12 transition-colors duration-700"
+          class="z-20 overflow-hidden relative grid h-3/4 grid-cols-2 grid-rows-2 p-12 transition-colors duration-1000"
           :class="{
             'bg-slate-100': !activeDomain,
-            'bg-transparent': activeDomain,
           }"
           :style="{
+            backgroundColor: activeDomain
+              ? domainComponent?.THEME_BACKGROUND
+              : undefined,
             backgroundImage: activeDomain
-              ? 'linear-gradient(rgba(100, 116, 139, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(100, 116, 139, 0.1) 1px, transparent 1px)'
+              ? `linear-gradient(${domainComponent?.THEME_BACKGROUND_GRID} 1px, transparent 1px), linear-gradient(90deg, ${domainComponent?.THEME_BACKGROUND_GRID} 1px, transparent 1px)`
               : 'linear-gradient(#cbd5e1 1px, transparent 1px), linear-gradient(90deg, #cbd5e1 1px, transparent 1px)',
             backgroundSize: '64px 64px',
           }"
         >
           <!-- Ground -->
           <div
-            class="z-20 absolute bottom-0 left-1/2 w-[300%] h-96 origin-bottom transition-colors duration-700"
+            class="z-20 absolute bottom-0 left-1/2 w-[300%] h-96 origin-bottom transition-colors duration-1000"
             :class="{
               'bg-slate-200': !activeDomain,
-              'bg-slate-600/10': activeDomain,
             }"
             :style="{
-              transform: 'translateX(-50%) perspective(350px) rotateX(45deg)',
+              backgroundColor: activeDomain
+                ? domainComponent?.THEME_GROUND
+                : undefined,
               backgroundImage: activeDomain
-                ? 'linear-gradient(rgba(100, 116, 139, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(100, 116, 139, 0.3) 1px, transparent 1px)'
+                ? `linear-gradient(${domainComponent?.THEME_GROUND_GRID} 1px, transparent 1px), linear-gradient(90deg, ${domainComponent?.THEME_GROUND_GRID} 1px, transparent 1px)`
                 : 'linear-gradient(#94a3b8 1px, transparent 1px), linear-gradient(90deg, #94a3b8 1px, transparent 1px)',
               backgroundSize: '8rem 8rem',
               maskImage:
                 'linear-gradient(to bottom, transparent 0%, black 35%)',
               WebkitMaskImage:
                 'linear-gradient(to bottom, transparent 0%, black 35%)',
+              transform: 'translateX(-50%) perspective(350px) rotateX(45deg)',
             }"
           />
 
@@ -288,12 +293,18 @@ const dialogueQueue = ref<DialogueLine[]>([]);
 const currentDialogue = ref<DialogueLine | null>(null);
 let afterDialogueCallback: (() => void) | null = null;
 
-const effectsMessage = ref("");
+const effectsMessage = ref<string>("");
 
 const preventedMessage = ref<string>("");
 
 const audioRef = ref<HTMLAudioElement | null>(null);
 
+const domainComponent = ref<{
+  THEME_BACKGROUND: string;
+  THEME_BACKGROUND_GRID: string;
+  THEME_GROUND: string;
+  THEME_GROUND_GRID: string;
+} | null>(null);
 const domainComponentMap: Record<
   string,
   ReturnType<typeof resolveComponent>

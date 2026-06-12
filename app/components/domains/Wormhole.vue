@@ -1,12 +1,16 @@
 <template>
   <div class="pointer-events-none z-0 inset-0 bg-black w-full h-full">
-  <canvas ref="canvasRef" class="block w-full h-full" />
-</div>
+    <canvas ref="canvasRef" class="block w-full h-full" />
+  </div>
 </template>
 
 <script setup lang="ts">
-const canvasRef = ref<HTMLCanvasElement | null>(null);
-const shaderStore = useShaderStore();
+defineExpose({
+  THEME_BACKGROUND: "transparent",
+  THEME_BACKGROUND_GRID: "#44444460",
+  THEME_GROUND: "#080e2880",
+  THEME_GROUND_GRID: "#41496d80",
+});
 
 const vsSource = `
 attribute vec2 a_position;
@@ -83,64 +87,7 @@ void main() {
 }
 `;
 
-function startRenderLoop(canvas: HTMLCanvasElement) {
-  function render() {
-    const { gl, program, timeLocation, resolutionLocation, startTime } =
-      shaderStore;
-    if (!gl || !program || !timeLocation || !resolutionLocation) return;
-
-    const time = (performance.now() - startTime) / 1000;
-    gl.uniform1f(timeLocation, time);
-    gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-    shaderStore.animationFrame = requestAnimationFrame(render);
-  }
-  render();
-}
-
-onMounted(() => {
-  const canvas = canvasRef.value;
-  if (!canvas || import.meta.server) return;
-
-  const context = canvas.getContext("webgl");
-  if (!context) return;
-
-  shaderStore.gl = context;
-
-  const prog = shaderStore.createProgram(context, vsSource, fsSource);
-  if (!prog) return;
-
-  shaderStore.program = prog;
-  context.useProgram(prog);
-
-  shaderStore.positionLocation = context.getAttribLocation(prog, "a_position");
-  shaderStore.timeLocation = context.getUniformLocation(prog, "t");
-  shaderStore.resolutionLocation = context.getUniformLocation(prog, "r");
-
-  const vertices = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-  shaderStore.setupVertexBuffer(vertices);
-  context.enableVertexAttribArray(shaderStore.positionLocation);
-  context.vertexAttribPointer(
-    shaderStore.positionLocation,
-    2,
-    context.FLOAT,
-    false,
-    0,
-    0,
-  );
-
-  shaderStore.resizeCanvas(canvas);
-  window.addEventListener("resize", () => shaderStore.resizeCanvas(canvas));
-
-  shaderStore.startTime = performance.now();
-  startRenderLoop(canvas);
-});
-
-onUnmounted(() => {
-  if (shaderStore.animationFrame)
-    cancelAnimationFrame(shaderStore.animationFrame);
-});
+const { canvasRef } = useWebGLShader({ fsSource, vsSource });
 </script>
 
 <style scoped></style>
