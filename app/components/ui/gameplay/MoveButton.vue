@@ -1,22 +1,38 @@
 <template>
   <button
-    class="flex flex-col gap-1 w-full h-full px-4 py-2 text-md text-secondary-foreground border-4 border-double border-secondary-border bg-slate-200 transition-all duration-150 enabled:hover:border-secondary-hover enabled:hover:bg-secondary-hover enabled:hover:text-secondary-hover-foreground enabled:active:bg-secondary-hover enabled:active:border-secondary-hover enabled:active:text-secondary-hover-foreground enabled:active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:border-slate-400 disabled:text-slate-500"
-    :disabled="!canAfford"
+    class="relative flex flex-col gap-1 w-full h-full px-4 py-2 text-md text-secondary-foreground border-4 border-double border-secondary-border bg-slate-200 transition-all duration-150 enabled:hover:border-secondary-hover enabled:hover:bg-secondary-hover enabled:hover:text-secondary-hover-foreground enabled:active:bg-secondary-hover enabled:active:border-secondary-hover enabled:active:text-secondary-hover-foreground enabled:active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:border-slate-400 disabled:text-slate-500"
+    :disabled="!canUse"
     @click="handleClick"
   >
+    <!-- Cooldown badge -->
+    <div
+      v-if="props.cooldownRemaining > 0"
+      class="absolute bottom-2 right-2 flex items-center gap-1 text-xs font-semibold bg-slate-500 text-white px-2 py-px"
+    >
+      <Icon name="pixelarticons:clock" class="text-sm" />
+      {{ props.cooldownRemaining }}
+    </div>
+
     <div class="flex justify-between items-center w-full gap-2 font-semibold">
-      <span class="tracking-wide">{{ move.move.name }}</span>
+      <span>{{ props.move.move.name }}</span>
       <span class="text-sm font-alt">
-        {{ isFree ? "Free" : move.move.cost + " energy" }}
+        {{ isFree ? "Free" : props.move.move.cost + " energy" }}
       </span>
     </div>
-    <div class="flex gap-1 text-sm tracking-wider">
-      <span v-if="move.move.damage !== null" class="font-alt font-semibold"
-        >{{ move.move.damage }} damage</span
+
+    <div class="flex items-center gap-1 text-sm tracking-wider">
+      <span
+        v-if="props.move.move.damage !== null"
+        class="font-alt font-semibold"
+        >{{ props.move.move.damage }} damage</span
       >
-      <span v-if="move.move.selfCustomDialogue || move.move.enemyCustomDialogue"
-        >✦</span
-      >
+      <Icon
+        v-if="
+          props.move.move.selfCustomDialogue ||
+          props.move.move.enemyCustomDialogue
+        "
+        name="pixelarticons:comment"
+      />
     </div>
   </button>
 </template>
@@ -26,6 +42,7 @@ import type { CardMove } from "~/types/collection";
 
 const props = defineProps<{
   move: CardMove;
+  cooldownRemaining: number;
   currentEnergy: number;
 }>();
 
@@ -42,6 +59,12 @@ const canAfford = computed(
     isFree.value ||
     (props.move.move.cost !== null &&
       props.currentEnergy >= props.move.move.cost),
+);
+
+const canUse = computed(
+  () =>
+    canAfford.value &&
+    (!props.cooldownRemaining || props.cooldownRemaining <= 0),
 );
 
 function handleClick() {

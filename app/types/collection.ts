@@ -18,10 +18,8 @@ export const RaritySchema = z.object({
 export const MoveDomainSchema = z.object({
   /** The move domain ID. */
   id: z.number(),
-  /** The Vue component name to render. */
+  /** The component name to render. */
   componentName: z.string(),
-  /** How many turns the domain persists. */
-  movePersistenceCount: z.number(),
 });
 
 /** Move schema. */
@@ -34,8 +32,13 @@ export const MoveSchema = z.object({
   cost: z.number().nullable(),
   /** The move damage. */
   damage: z.number().nullable(),
-  /** Domain triggered by this move. */
+  /** The move cooldown duration (in moves). */
+  cooldownDuration: z.number(),
+
+  /** The domain component triggered by this move. */
   domain: MoveDomainSchema.nullable(),
+  /** The duration of the domain (in moves). */
+  domainDuration: z.number(),
 
   // Self properties
   selfDefenseMultiplier: z.tuple([z.number(), z.number()]).nullable(),

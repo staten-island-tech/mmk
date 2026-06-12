@@ -98,25 +98,26 @@ export function useBattleEngine(
     return {
       hp: card.health,
       maxHp: card.health,
-
       moveEnergy: card.baseMoveEnergy,
       maxMoveEnergy: 100,
       moveEnergyGain: card.baseMoveEnergyGain,
-
       baseAttack: 1,
       baseDefense: card.defense,
-
       effectiveAttack: 1,
       effectiveDefense: card.defense,
-
       poisonTurns: 0,
       poisonMultiplier: 1,
-
       infiniteHealthTurns: 0,
       preventedTurns: 0,
-
       freshEffects: false,
       activeEffects: [],
+      moveCooldowns: card.moves.reduce(
+        (acc, move) => {
+          acc[move.move.id] = 0;
+          return acc;
+        },
+        {} as Record<number, number>,
+      ),
     };
   }
 
@@ -131,6 +132,15 @@ export function useBattleEngine(
     stateRef.value.activeEffects = stateRef.value.activeEffects
       .map((e) => ({ ...e, turnsLeft: e.turnsLeft - 1 }))
       .filter((e) => e.turnsLeft > 0);
+  }
+
+  function tickMoveCooldowns(stateRef: Ref<PlayerState | null>) {
+    if (!stateRef.value) return;
+
+    for (const moveId in stateRef.value.moveCooldowns) {
+      const turns = stateRef.value.moveCooldowns[moveId]!;
+      if (turns > 0) stateRef.value.moveCooldowns[moveId] = turns - 1;
+    }
   }
 
   function regenEnergyAndPoison(stateRef: Ref<PlayerState | null>) {
@@ -232,10 +242,10 @@ export function useBattleEngine(
     const s = selfRef.value;
     const e = enemyRef.value;
 
-    if (move.domain?.componentName && move.domain.movePersistenceCount) {
+    if (move.domain?.componentName && move.domainDuration) {
       activeDomain.value = {
-        componentName: move.domain.componentName,
-        turnsLeft: move.domain.movePersistenceCount,
+        componentName: move.domain?.componentName,
+        turnsLeft: move.domainDuration,
       };
 
       domainJustActivated.value = true;
@@ -298,8 +308,11 @@ export function useBattleEngine(
     const enemyRef = currentPlayer.value === 1 ? p2State : p1State;
 
     regenEnergyAndPoison(selfRef);
+
     tickEffects(selfRef);
     tickEffects(enemyRef);
+
+    tickMoveCooldowns(selfRef);
 
     updateDisplayStats(selfRef);
     updateDisplayStats(enemyRef);
@@ -347,6 +360,9 @@ export function useBattleEngine(
 
     const selfRef = currentPlayer.value === 1 ? p1State : p2State;
     const enemyRef = currentPlayer.value === 1 ? p2State : p1State;
+
+    if (move.cooldownDuration && move.cooldownDuration > 0)
+      selfRef.value!.moveCooldowns[move.id] = move.cooldownDuration + 1; // +1 because we don't want to count the move itself
 
     if (move.cost !== null)
       selfRef.value!.moveEnergy = Math.max(

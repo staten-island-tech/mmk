@@ -268,7 +268,10 @@
                     v-for="move in currentMoves"
                     :key="move.id"
                     :move="move"
-                    :current-energy="currentPlayerState.moveEnergy"
+                    :cooldownRemaining="
+                      currentPlayerState.moveCooldowns[move.move.id] ?? 0
+                    "
+                    :currentEnergy="currentPlayerState.moveEnergy"
                     @select="selectMove"
                     class="w-full h-full"
                   />
@@ -483,7 +486,7 @@ onMounted(async () => {
   try {
     const [p1Data, p2Data] = await Promise.all([
       $fetch<Card[]>(`${config.public.mmkPanelApi}/cards`, {
-        query: { id: 2 },
+        query: { id: 11 },
       }),
       $fetch<Card[]>(`${config.public.mmkPanelApi}/cards`, {
         query: { id: 13 },
