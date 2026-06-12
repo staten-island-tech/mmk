@@ -67,31 +67,34 @@
         </div>
       </div>
 
-      <!-- Defense (immutable stat) -->
-      <div
-        class="flex justify-between items-center mt-auto text-xs text-slate-500"
-      >
-        <span class="mr-2 tracking-wide uppercase">Defense</span>
-        <div class="h-px w-full bg-slate-300" />
-        <span
-          class="px-2 py-0.5 font-semibold border border-slate-300 bg-slate-200"
-          >{{ state.defense }}</span
-        >
+      <!-- Immutable stats -->
+      <div class="flex flex-col gap-2 mt-auto text-xs text-slate-500">
+        <!-- Attack -->
+        <div class="flex justify-between items-center">
+          <span class="mr-2 tracking-wide uppercase">Attack Multiplier</span>
+          <div class="h-px flex-1 bg-slate-300" />
+          <span
+            class="px-2 py-0.5 font-semibold border border-slate-300 bg-slate-200"
+            >×{{ Math.round(state.effectiveAttack * 10) / 10 }}</span
+          >
+        </div>
+
+        <!-- Defense -->
+        <div class="flex justify-between items-center">
+          <span class="mr-2 tracking-wide uppercase">Defense Strength</span>
+          <div class="h-px flex-1 bg-slate-300" />
+          <span
+            class="px-2 py-0.5 font-semibold border border-slate-300 bg-slate-200"
+            >{{ Math.round(state.effectiveDefense * 10) / 10 }}</span
+          >
+        </div>
       </div>
     </div>
   </UiCardSimple>
 </template>
 <script setup lang="ts">
-import { computed } from "vue";
 import type { Card } from "~/types/collection";
-
-interface PlayerState {
-  hp: number;
-  maxHp: number;
-  moveEnergy: number;
-  maxMoveEnergy: number;
-  defense: number;
-}
+import type { PlayerState } from "~/types/game";
 
 const props = defineProps<{
   card: Card;

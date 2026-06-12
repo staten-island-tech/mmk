@@ -25,16 +25,25 @@ export interface ActiveEffect {
 export interface PlayerState {
   hp: number;
   maxHp: number;
+
   moveEnergy: number;
   maxMoveEnergy: number;
   moveEnergyGain: number;
-  defense: number;
-  attack: number;
-  activeEffects: ActiveEffect[];
-  preventedTurns: number;
+
+  baseAttack: number;
+  baseDefense: number;
+
+  effectiveAttack: number;
+  effectiveDefense: number;
+
   poisonTurns: number;
   poisonMultiplier: number;
+
   infiniteHealthTurns: number;
+  preventedTurns: number;
+
+  freshEffects: boolean;
+  activeEffects: ActiveEffect[];
 }
 
 export interface ActiveDomain {

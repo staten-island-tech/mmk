@@ -486,7 +486,7 @@ onMounted(async () => {
         query: { id: 2 },
       }),
       $fetch<Card[]>(`${config.public.mmkPanelApi}/cards`, {
-        query: { id: 3 },
+        query: { id: 13 },
       }),
     ]);
 

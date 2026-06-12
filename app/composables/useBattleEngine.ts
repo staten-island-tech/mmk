@@ -98,21 +98,35 @@ export function useBattleEngine(
     return {
       hp: card.health,
       maxHp: card.health,
-      attack: 1,
-      defense: card.defense,
+
       moveEnergy: card.baseMoveEnergy,
       maxMoveEnergy: 100,
       moveEnergyGain: card.baseMoveEnergyGain,
+
+      baseAttack: 1,
+      baseDefense: card.defense,
+
+      effectiveAttack: 1,
+      effectiveDefense: card.defense,
+
       poisonTurns: 0,
       poisonMultiplier: 1,
+
       infiniteHealthTurns: 0,
       preventedTurns: 0,
+
+      freshEffects: false,
       activeEffects: [],
     };
   }
 
   function tickEffects(stateRef: Ref<PlayerState | null>) {
     if (!stateRef.value) return;
+
+    if (stateRef.value.freshEffects) {
+      stateRef.value.freshEffects = false;
+      return;
+    }
 
     stateRef.value.activeEffects = stateRef.value.activeEffects
       .map((e) => ({ ...e, turnsLeft: e.turnsLeft - 1 }))
@@ -124,7 +138,7 @@ export function useBattleEngine(
 
     const s = stateRef.value;
 
-    s.moveEnergy = Math.min(s.maxMoveEnergy, s.moveEnergy + s.moveEnergyGain);
+    s.moveEnergy = Math.min(s.maxMoveEnergy, s.moveEnergy + getEnergyGain(s));
 
     if (s.poisonTurns > 0) {
       if (s.infiniteHealthTurns <= 0)
@@ -148,17 +162,64 @@ export function useBattleEngine(
   ): number {
     if (!move.damage) return 0;
 
-    const atkMul = attacker.attack;
-    const atkAdd = attacker.activeEffects
-      .filter((e) => e.type === "attackAdd")
-      .reduce((s, e) => s + e.value, 0);
+    const atk = getEffectiveAttack(attacker);
+    const def = getEffectiveDefense(defender);
 
-    const defMul = defender.defense / 100;
+    const reduction = def / 100;
 
-    return Math.max(
-      0,
-      Math.round((move.damage * atkMul + atkAdd) * (1 - defMul)),
-    );
+    return Math.max(0, Math.round(move.damage * atk * (1 - reduction)));
+  }
+
+  function getStatModifiers(
+    state: PlayerState,
+    typeMap: {
+      mul: string;
+      add: string;
+    },
+  ) {
+    const mul = state.activeEffects
+      .filter((e) => e.type === typeMap.mul)
+      .reduce((acc, e) => acc * e.value, 1);
+
+    const add = state.activeEffects
+      .filter((e) => e.type === typeMap.add)
+      .reduce((acc, e) => acc + e.value, 0);
+
+    return { mul, add };
+  }
+
+  function getEffectiveAttack(state: PlayerState) {
+    const { mul, add } = getStatModifiers(state, {
+      mul: "attackMul",
+      add: "attackAdd",
+    });
+
+    return state.baseAttack * mul + add;
+  }
+
+  function getEffectiveDefense(state: PlayerState) {
+    const { mul, add } = getStatModifiers(state, {
+      mul: "defenseMul",
+      add: "defenseAdd",
+    });
+
+    return state.baseDefense * mul + add;
+  }
+
+  function getEnergyGain(state: PlayerState) {
+    const { mul, add } = getStatModifiers(state, {
+      mul: "energyGainMul",
+      add: "energyGainAdd",
+    });
+
+    return state.moveEnergyGain * mul + add;
+  }
+
+  function updateDisplayStats(stateRef: Ref<PlayerState | null>) {
+    if (!stateRef.value) return;
+
+    stateRef.value.effectiveAttack = getEffectiveAttack(stateRef.value);
+    stateRef.value.effectiveDefense = getEffectiveDefense(stateRef.value);
   }
 
   function applyEffectsFromMove(
@@ -193,6 +254,8 @@ export function useBattleEngine(
         value: val[0],
         turnsLeft: val[1],
       });
+
+      target.freshEffects = true;
     };
 
     // self properties
@@ -232,9 +295,14 @@ export function useBattleEngine(
 
   function switchTurn() {
     const selfRef = currentPlayer.value === 1 ? p1State : p2State;
+    const enemyRef = currentPlayer.value === 1 ? p2State : p1State;
 
     regenEnergyAndPoison(selfRef);
     tickEffects(selfRef);
+    tickEffects(enemyRef);
+
+    updateDisplayStats(selfRef);
+    updateDisplayStats(enemyRef);
 
     if (activeDomain.value)
       if (!domainJustActivated.value) {
@@ -292,6 +360,9 @@ export function useBattleEngine(
     }
 
     applyEffectsFromMove(move, selfRef, enemyRef);
+
+    updateDisplayStats(selfRef);
+    updateDisplayStats(enemyRef);
 
     if (checkWin()) return;
 
