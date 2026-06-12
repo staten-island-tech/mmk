@@ -99,10 +99,10 @@ export function useBattleEngine(
       hp: card.health,
       maxHp: card.health,
       attack: 1,
-      defense: 0,
-      moveEnergy: card.baseMoveEnergy ?? 0,
+      defense: card.defense,
+      moveEnergy: card.baseMoveEnergy,
       maxMoveEnergy: 100,
-      moveEnergyGain: card.baseMoveEnergyGain ?? 10,
+      moveEnergyGain: card.baseMoveEnergyGain,
       poisonTurns: 0,
       poisonMultiplier: 1,
       infiniteHealthTurns: 0,
@@ -231,6 +231,11 @@ export function useBattleEngine(
   }
 
   function switchTurn() {
+    const selfRef = currentPlayer.value === 1 ? p1State : p2State;
+
+    regenEnergyAndPoison(selfRef);
+    tickEffects(selfRef);
+
     if (activeDomain.value)
       if (!domainJustActivated.value) {
         activeDomain.value.turnsLeft--;
@@ -291,9 +296,6 @@ export function useBattleEngine(
     if (checkWin()) return;
 
     const message = buildEffectsMessage();
-
-    regenEnergyAndPoison(selfRef);
-    tickEffects(selfRef);
 
     if (message) {
       effectsMessage.value = message;
