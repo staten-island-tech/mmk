@@ -77,6 +77,23 @@ export function useBattleEngine(
     return lines.join("\n");
   }
 
+  function healthTint(hp: number, maxHp: number) {
+    const ratio = hp / maxHp;
+    const intensity = 1 - ratio;
+
+    const saturate = 1 + intensity * 2;
+    const brightness = 1 - intensity * 0.3;
+    const sepia = intensity * 0.6;
+    const hueRotate = -20 * intensity;
+
+    return `
+      sepia(${sepia})
+      saturate(${saturate})
+      brightness(${brightness})
+      hue-rotate(${hueRotate}deg)
+    `;
+  }
+
   function createPlayerState(card: Card): PlayerState {
     return {
       hp: card.health,
@@ -238,12 +255,14 @@ export function useBattleEngine(
     if (p1State.value.hp <= 0) {
       winner.value = 2;
       battleState.value = "finished";
+      activeDomain.value = null;
       return true;
     }
 
     if (p2State.value.hp <= 0) {
       winner.value = 1;
       battleState.value = "finished";
+      activeDomain.value = null;
       return true;
     }
 
@@ -291,28 +310,16 @@ export function useBattleEngine(
     skipToValidTurn();
   }
 
-  function resetBattle() {
-    winner.value = null;
-    activeDomain.value = null;
-    battleState.value = "player_turn";
-
-    if (p1Card.value && p2Card.value) {
-      p1State.value = null;
-      p2State.value = null;
-      initializeBattle();
-    }
-  }
-
   return {
     createPlayerState,
     executeMove,
     initializeBattle,
-    resetBattle,
     switchTurn,
     skipToValidTurn,
     checkWin,
     tickEffects,
     regenEnergyAndPoison,
+    healthTint,
     calcDamage,
     applyEffectsFromMove,
     onEffectsFinished,

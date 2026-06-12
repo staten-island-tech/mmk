@@ -1,6 +1,6 @@
 <template>
   <div class="select-none relative flex flex-col w-full h-screen">
-    <Transition name="fade-battle" mode="out-in">
+    <Transition name="game" mode="out-in">
       <div
         v-if="!p1Card || !p2Card"
         key="loading"
@@ -21,42 +21,64 @@
         <Transition name="win">
           <div
             v-if="battleState === 'finished'"
-            class="z-40 absolute inset-0 flex flex-col justify-center items-center bg-black/70 backdrop-blur-md"
+            class="z-40 absolute inset-0 flex flex-col justify-center items-center bg-black/80 backdrop-grayscale"
           >
             <div
-              class="flex flex-col items-center gap-6 p-12 w-full border-y-8 border-double ring-y-4 ring-red-300 ring-inset"
+              class="flex flex-col items-center gap-6 p-12 w-full border-y-8 border-double"
               :class="
                 winner === 1
-                  ? 'border-game-p1-accent text-game-p1-accent'
-                  : 'border-game-p2-accent text-game-p2-accent'
+                  ? 'border-game-p1-accent text-game-p1-accent bg-game-p1-accent/10'
+                  : 'border-game-p2-accent text-game-p2-accent bg-game-p2-accent/10'
               "
             >
-              <p class="text-2xl tracking-wide font-alt font-bold uppercase">
-                Victory
-              </p>
+              <p class="text-2xl tracking-wide uppercase">Battle Complete</p>
+
               <h1 class="text-5xl tracking-widest font-display uppercase">
                 {{ winner === 1 ? p1Card.name : p2Card.name }}
               </h1>
-              <p class="text-xl tracking-wide font-alt font-semibold uppercase">
-                {{ winner === 1 ? "Player 1" : "Player 2" }} wins
-              </p>
-              <button
-                class="mt-4 px-8 py-3 border-2 font-mono text-xs tracking-[0.4em] uppercase hover:bg-white/10 transition-colors"
-                :class="
-                  winner === 1
-                    ? 'border-game-p1-accent'
-                    : 'border-game-p2-accent'
+
+              <img
+                :src="
+                  winner === 1 ? p1Card.defaultSprite : p2Card.defaultSprite
                 "
-                @click="battle.resetBattle()"
-              >
-                Play Again
-              </button>
+                class="h-32"
+              />
+
+              <p class="text-xl tracking-wide">
+                {{ winner === 1 ? "Player 1" : "Player 2" }} {{ winMessage }}.
+              </p>
+
+              <div class="flex gap-5">
+                <button
+                  class="mt-4 px-8 py-2 min-w-36 text-lg tracking-wider border-4 border-double transition-all duration-150 hover:text-white active:scale-95"
+                  :class="
+                    winner === 1
+                      ? 'border-game-p1-accent hover:bg-game-p1-accent'
+                      : 'border-game-p2-accent hover:bg-game-p2-accent'
+                  "
+                  @click="navigateTo('/')"
+                >
+                  Home
+                </button>
+
+                <button
+                  class="mt-4 px-4 py-2 min-w-36 text-lg tracking-wider border-4 border-double transition-all duration-150 hover:text-white active:scale-95"
+                  :class="
+                    winner === 1
+                      ? 'border-game-p1-accent hover:bg-game-p1-accent'
+                      : 'border-game-p2-accent hover:bg-game-p2-accent'
+                  "
+                  @click="navigateTo('/queue')"
+                >
+                  Requeue
+                </button>
+              </div>
             </div>
           </div>
         </Transition>
 
         <!-- Domain effect -->
-        <Transition name="fade-battle" mode="out-in">
+        <Transition name="game" mode="out-in">
           <component
             v-if="
               activeDomain && domainComponentMap[activeDomain.componentName]
@@ -66,27 +88,13 @@
             class="z-10 absolute inset-0 pointer-events-none"
           />
         </Transition>
-        <div
-          class="flex flex-col gap-2 absolute top-4 left-4 z-50 bg-black text-white text-xs p-2 font-mono"
-        >
-          <p>DEBUG INFO</p>
-          <p>battleState: {{ battleState }}</p>
-          <p>activeDomain: {{ activeDomain }}</p>
-          <p>resolved:</p>
-          <p>
-            {{
-              activeDomain
-                ? resolveComponent(activeDomain.componentName)
-                : "null"
-            }}
-          </p>
-        </div>
 
         <!-- Battlefield -->
         <div
-          class="z-20 overflow-hidden relative grid h-3/4 grid-cols-2 grid-rows-2 p-12 transition-colors duration-1000"
+          class="z-20 overflow-hidden relative grid h-3/4 grid-cols-2 grid-rows-2 p-12"
           :class="{
             'bg-slate-100': !activeDomain,
+            'h-full': battleState === 'finished',
           }"
           :style="{
             backgroundColor: activeDomain
@@ -96,6 +104,8 @@
               ? `linear-gradient(${domainComponent?.THEME_BACKGROUND_GRID} 1px, transparent 1px), linear-gradient(90deg, ${domainComponent?.THEME_BACKGROUND_GRID} 1px, transparent 1px)`
               : 'linear-gradient(#cbd5e1 1px, transparent 1px), linear-gradient(90deg, #cbd5e1 1px, transparent 1px)',
             backgroundSize: '64px 64px',
+            transition:
+              'height 1s ease 1s, background-color 1s ease, background-image 1s ease',
           }"
         >
           <!-- Ground -->
@@ -156,7 +166,9 @@
                 :src="p2Card.defaultSprite"
                 class="w-48 h-48 object-contain transition-all duration-300"
                 :style="{
-                  filter: 'drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4))',
+                  filter:
+                    battle.healthTint(p2State.hp, p2State.maxHp) +
+                    ' drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4))',
                 }"
               />
               <div class="absolute w-24 h-8 rounded-full bg-black/30 blur-md" />
@@ -176,7 +188,9 @@
                 :src="p1Card.defaultSprite"
                 class="w-48 h-48 object-contain scale-x-[-1] transition-all duration-300"
                 :style="{
-                  filter: 'drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4))',
+                  filter:
+                    battle.healthTint(p1State.hp, p1State.maxHp) +
+                    ' drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4))',
                 }"
               />
               <div class="absolute w-24 h-8 rounded-full bg-black/30 blur-md" />
@@ -185,82 +199,101 @@
         </div>
 
         <!-- Bottom panel -->
-        <UiCardSimple class="z-20 p-8 w-full h-1/4 !max-w-full">
-          <div
-            v-if="battleState === 'dialogue' && currentDialogue"
-            class="h-full min-h-0"
+        <Transition name="panel">
+          <UiCardSimple
+            v-if="battleState !== 'finished'"
+            class="z-20 p-8 w-full h-1/4 !max-w-full"
           >
-            <UiGameplayDialogue
-              :speaker="currentDialogue.speaker"
-              :dialogue-text="currentDialogue.text"
-              :typing-speed-cps="50"
-              @finished="onDialogueFinished"
-            />
-          </div>
-
-          <div
-            v-else-if="battleState === 'effects' && effectsMessage"
-            class="h-full min-h-0"
-          >
-            <UiGameplayDialogue
-              speaker="Battle Log"
-              :dialogue-text="effectsMessage"
-              :typing-speed-cps="60"
-              @finished="onEffectsFinished"
-            />
-          </div>
-
-          <div v-else-if="battleState === 'prevented'" class="h-full min-h-0">
-            <UiGameplayDialogue
-              :speaker="currentPlayer === 1 ? p1Card.name : p2Card.name"
-              :dialogue-text="preventedMessage"
-              :typing-speed-cps="70"
-              @finished="onPreventedFinished"
-            />
-          </div>
-
-          <!-- Move selection -->
-          <div
-            v-else-if="battleState === 'player_turn'"
-            class="flex items-center gap-16 h-full"
-          >
-            <div>
-              <p class="text-md tracking-widest font-alt uppercase">
-                What will
-              </p>
-              <p
-                class="text-xl leading-tight"
-                :class="
-                  currentPlayer === 1
-                    ? 'text-game-p1-accent'
-                    : 'text-game-p2-accent'
-                "
-              >
-                {{ currentPlayer === 1 ? p1Card.name : p2Card.name }}
-              </p>
-              <p class="text-md tracking-widest font-alt uppercase">do?</p>
+            <div
+              v-if="battleState === 'dialogue' && currentDialogue"
+              class="h-full min-h-0"
+            >
+              <UiGameplayDialogue
+                :speaker="currentDialogue.speaker"
+                :dialogue-text="currentDialogue.text"
+                :typing-speed-cps="50"
+                @finished="onDialogueFinished"
+              />
             </div>
 
-            <!-- Move list -->
             <div
-              class="overflow-y-auto flex-1 flex items-start pr-2 w-full h-full"
+              v-else-if="battleState === 'effects' && effectsMessage"
+              class="h-full min-h-0"
             >
-              <div class="grid grid-cols-3 auto-rows-fr gap-4 w-full">
-                <UiGameplayMoveButton
-                  v-for="move in currentMoves"
-                  :key="move.id"
-                  :move="move"
-                  :current-energy="currentPlayerState.moveEnergy"
-                  @select="selectMove"
-                  class="w-full h-full"
-                />
+              <UiGameplayDialogue
+                speaker="Battle Log"
+                :dialogue-text="effectsMessage"
+                :typing-speed-cps="60"
+                @finished="onEffectsFinished"
+              />
+            </div>
+
+            <div v-else-if="battleState === 'prevented'" class="h-full min-h-0">
+              <UiGameplayDialogue
+                :speaker="currentPlayer === 1 ? p1Card.name : p2Card.name"
+                :dialogue-text="preventedMessage"
+                :typing-speed-cps="70"
+                @finished="onPreventedFinished"
+              />
+            </div>
+
+            <!-- Move selection -->
+            <div
+              v-else-if="battleState === 'player_turn'"
+              class="flex items-center gap-16 h-full"
+            >
+              <div>
+                <p class="text-md tracking-widest font-alt uppercase">
+                  What will
+                </p>
+                <p
+                  class="text-xl leading-tight"
+                  :class="
+                    currentPlayer === 1
+                      ? 'text-game-p1-accent'
+                      : 'text-game-p2-accent'
+                  "
+                >
+                  {{ currentPlayer === 1 ? p1Card.name : p2Card.name }}
+                </p>
+                <p class="text-md tracking-widest font-alt uppercase">do?</p>
+              </div>
+
+              <!-- Move list -->
+              <div
+                class="overflow-y-auto flex-1 flex items-start pr-2 w-full h-full"
+              >
+                <div class="grid grid-cols-3 auto-rows-fr gap-4 w-full">
+                  <UiGameplayMoveButton
+                    v-for="move in currentMoves"
+                    :key="move.id"
+                    :move="move"
+                    :current-energy="currentPlayerState.moveEnergy"
+                    @select="selectMove"
+                    class="w-full h-full"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Idle -->
-          <div v-else>Idle...</div>
-        </UiCardSimple>
+            <!-- Idle -->
+            <div v-else class="flex flex-col gap-5 w-full h-full min-h-0">
+              <div class="flex flex-col gap-2 h-full min-h-0">
+                <p
+                  class="text-sm text-slate-500 tracking-widest font-semibold uppercase"
+                >
+                  Awaiting Response
+                </p>
+
+                <div
+                  class="overflow-y-auto w-full h-full min-h-0 whitespace-pre-line"
+                >
+                  Waiting for a signal to continue<span class="dots" />
+                </div>
+              </div>
+            </div>
+          </UiCardSimple>
+        </Transition>
       </div>
     </Transition>
   </div>
@@ -294,8 +327,17 @@ const currentDialogue = ref<DialogueLine | null>(null);
 let afterDialogueCallback: (() => void) | null = null;
 
 const effectsMessage = ref<string>("");
-
 const preventedMessage = ref<string>("");
+const winMessage = computed<string>(() => {
+  const messages = [
+    "was a tad bit stronger",
+    "had the sharper sword",
+    "absolutely dominated this one",
+    "was clearly locked-in",
+    "forgot what it means to lose",
+  ];
+  return messages[Math.floor(Math.random() * messages.length)]!;
+});
 
 const audioRef = ref<HTMLAudioElement | null>(null);
 
@@ -441,10 +483,10 @@ onMounted(async () => {
   try {
     const [p1Data, p2Data] = await Promise.all([
       $fetch<Card[]>(`${config.public.mmkPanelApi}/cards`, {
-        query: { name: "Michael Matiychenko" },
+        query: { id: 2 },
       }),
       $fetch<Card[]>(`${config.public.mmkPanelApi}/cards`, {
-        query: { name: "Michael Whalen" },
+        query: { id: 3 },
       }),
     ]);
 
@@ -485,19 +527,32 @@ onBeforeUnmount(() => {
 </script>
 
 <style>
-.fade-battle-enter-active,
-.fade-battle-leave-active {
-  transition: opacity 1s ease-out;
+.game-enter-active,
+.game-leave-active {
+  transition: opacity 1s ease;
 }
 
-.fade-battle-enter-from,
-.fade-battle-leave-to {
+.game-enter-from,
+.game-leave-to {
   opacity: 0;
+}
+
+.panel-enter-active,
+.panel-leave-active {
+  transition: transform 1s ease 1s;
+}
+
+.panel-enter-from,
+.panel-leave-to {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  transform: translateY(100%);
 }
 
 .win-enter-active,
 .win-leave-active {
-  transition: opacity 0.5s ease;
+  transition: opacity 0.5s ease 3s;
 }
 
 .win-enter-from,
