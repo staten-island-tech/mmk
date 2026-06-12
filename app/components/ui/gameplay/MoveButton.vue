@@ -7,7 +7,7 @@
     <!-- Cooldown badge -->
     <div
       v-if="props.cooldownRemaining > 0"
-      class="absolute bottom-2 right-2 flex items-center gap-1 text-xs font-semibold bg-slate-500 text-white px-2 py-px"
+      class="absolute flex items-center gap-1 bottom-2 right-2 text-xs text-white bg-slate-500 px-2 py-px"
     >
       <Icon name="pixelarticons:clock" class="text-sm" />
       {{ props.cooldownRemaining }}
@@ -20,12 +20,10 @@
       </span>
     </div>
 
-    <div class="flex items-center gap-1 text-sm tracking-wider">
-      <span
-        v-if="props.move.move.damage !== null"
-        class="font-alt font-semibold"
-        >{{ props.move.move.damage }} damage</span
-      >
+    <div
+      class="flex items-center gap-1 text-sm font-alt font-semibold tracking-wider"
+    >
+      <span>{{ moveSummary || "This move has no effects." }}</span>
       <Icon
         v-if="
           props.move.move.selfCustomDialogue ||
@@ -66,6 +64,34 @@ const canUse = computed(
     canAfford.value &&
     (!props.cooldownRemaining || props.cooldownRemaining <= 0),
 );
+
+const selfAttackDisplay = computed(() => {
+  const multiplier = props.move.move.selfAttackMultiplier?.[0];
+  const scalar = props.move.move.selfAttackScalarBoost?.[0];
+
+  if (!multiplier && !scalar) return "";
+  if (multiplier && !scalar) return `×${multiplier} attack`;
+  if (!multiplier && scalar) return `+${scalar} attack`;
+  return `×${multiplier} +${scalar} attack`;
+});
+
+const selfDefenseDisplay = computed(() => {
+  const multiplier = props.move.move.selfDefenseMultiplier?.[0];
+  const scalar = props.move.move.selfDefenseScalarBoost?.[0];
+
+  if (!multiplier && !scalar) return "";
+  if (multiplier && !scalar) return `×${multiplier} defense`;
+  if (!multiplier && scalar) return `+${scalar} defense`;
+  return `×${multiplier} +${scalar} defense`;
+});
+
+const moveSummary = computed(() => {
+  const parts = [];
+  if (props.move.move.damage) parts.push(`${props.move.move.damage} damage`);
+  if (selfAttackDisplay.value) parts.push(selfAttackDisplay.value);
+  if (selfDefenseDisplay.value) parts.push(selfDefenseDisplay.value);
+  return parts.join(", ");
+});
 
 function handleClick() {
   if (canAfford.value) emit("select", props.move);
