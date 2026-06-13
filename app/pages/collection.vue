@@ -9,9 +9,9 @@
       {{ dialogMessage }}
     </UiModalSimple>
 
-    <div class="flex flex-col gap-4 p-12 h-full">
+    <div class="p-12 h-full">
       <div
-        class="overflow-y-auto flex flex-wrap justify-center h-full gap-12 border-4 border-double border-card-border bg-slate-200 p-8"
+        class="flex flex-wrap justify-center gap-8 p-8 h-full border-4 border-double border-card-border bg-slate-200"
         style="
           background-image:
             linear-gradient(#cbd5e1 1px, transparent 1px),
@@ -34,7 +34,7 @@
 
         <div
           v-else-if="user.cards?.length === 0"
-          class="flex flex-col justify-center items-center text-center gap-4 w-full h-full"
+          class="overflow-y-auto flex flex-col justify-center items-center text-center gap-4 w-full h-full"
         >
           <Icon
             name="pixelarticons:mood-sad"
@@ -46,68 +46,79 @@
         </div>
 
         <template v-else>
-          <UiCardSimple
-            v-for="card in user.cards"
-            class="flex flex-col w-[28rem] h-[34rem]"
-          >
-            <div
-              class="flex-1 flex justify-center items-center p-8 w-full min-h-48 bg-slate-300"
-            >
-              <img :src="card.defaultSprite" class="max-h-40" />
-            </div>
+          <UiFormInputSimple
+            v-model="cardSearch"
+            placeholder="Search for a card..."
+            class="w-1/2 font-sans"
+          />
 
-            <div
-              class="flex flex-col items-center text-center w-full h-full min-h-0"
+          <div class="flex flex-wrap justify-center w-full h-full gap-12">
+            <UiCardSimple
+              v-for="card in filteredCards"
+              class="flex flex-col w-[28rem] h-[34rem]"
             >
               <div
-                class="p-2 text-center w-full border-t-2 border-card-border"
-                :style="{
-                  'background-color': card.rarity.plateColor,
-                }"
+                class="flex-1 flex justify-center items-center p-8 w-full min-h-48 bg-slate-300"
               >
-                <h2 class="text-xl font-bold uppercase">
-                  {{ card.rarity.name }}
-                </h2>
+                <img :src="card.defaultSprite" class="max-h-40" />
               </div>
 
               <div
-                class="flex flex-col items-center p-2 w-full border-y-2 border-card-border bg-slate-200"
+                class="flex flex-col items-center text-center w-full h-full min-h-0"
               >
-                <h3 class="text-2xl font-bold">{{ card.name }}</h3>
-                <h3 class="text-lg font-semibold uppercase">
-                  {{ card.nickname }}
-                </h3>
-              </div>
-
-              <div
-                class="flex-1 flex flex-col justify-between w-full min-h-0 p-1"
-              >
-                <p
-                  class="overflow-y-auto flex-1 p-2 min-h-0 ring-4 ring-card-ring"
+                <div
+                  class="p-2 text-center w-full border-t-2 border-card-border"
+                  :style="{
+                    'background-color': card.rarity.plateColor,
+                  }"
                 >
-                  {{ card.description }}
-                </p>
+                  <h2 class="text-xl font-bold uppercase">
+                    {{ card.rarity.name }}
+                  </h2>
+                </div>
 
                 <div
-                  class="flex justify-between items-center px-4 py-2 text-xl font-medium border-t-4 border-card-ring bg-slate-200"
+                  class="flex flex-col items-center p-2 w-full border-y-2 border-card-border bg-slate-200"
                 >
-                  <span class="flex items-center gap-2 text-red-600">
-                    <Icon name="pixelarticons:heart" />
-                    {{ card.health }} HP
-                  </span>
+                  <h3 class="text-2xl font-bold">{{ card.name }}</h3>
+                  <h3 class="text-lg font-semibold uppercase">
+                    {{ card.nickname }}
+                  </h3>
+                </div>
 
-                  <span v-if="card.obtained_at" class="text-sm text-slate-500">
-                    {{ new Date(card.obtained_at).toLocaleString() }}
-                  </span>
+                <div
+                  class="flex-1 flex flex-col justify-between w-full min-h-0 p-1"
+                >
+                  <p
+                    class="overflow-y-auto flex-1 p-2 min-h-0 ring-4 ring-card-ring"
+                  >
+                    {{ card.description }}
+                  </p>
 
-                  <span class="flex items-center gap-2 text-blue-600">
-                    <Icon name="pixelarticons:shield" />
-                    {{ card.defense }} DEF
-                  </span>
+                  <div
+                    class="flex justify-between items-center px-4 py-2 text-xl font-medium border-t-4 border-card-ring bg-slate-200"
+                  >
+                    <span class="flex items-center gap-2 text-red-600">
+                      <Icon name="pixelarticons:heart" />
+                      {{ card.health }} HP
+                    </span>
+
+                    <span
+                      v-if="card.obtained_at"
+                      class="text-sm text-slate-500"
+                    >
+                      {{ new Date(card.obtained_at).toLocaleString() }}
+                    </span>
+
+                    <span class="flex items-center gap-2 text-blue-600">
+                      <Icon name="pixelarticons:shield" />
+                      {{ card.defense }} DEF
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </UiCardSimple>
+            </UiCardSimple>
+          </div>
         </template>
       </div>
     </div>
@@ -135,6 +146,21 @@ const dialogButtons = ref<DialogButton[]>([
     callback: () => (dialogOpen.value = false),
   },
 ]);
+
+const cardSearch = ref<string>("");
+
+const filteredCards = computed(() => {
+  const query = cardSearch.value.trim().toLowerCase();
+  if (!query) return user.cards ?? [];
+
+  return (user.cards ?? []).filter((card) => {
+    return (
+      card.name?.toLowerCase().includes(query) ||
+      card.nickname?.toLowerCase().includes(query) ||
+      card.description?.toLowerCase().includes(query)
+    );
+  });
+});
 
 async function loadCards() {
   loading.value = true;
