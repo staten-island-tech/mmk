@@ -31,10 +31,16 @@
                   : 'border-game-p2-accent text-game-p2-accent bg-game-p2-accent/10'
               "
             >
-              <p class="text-2xl tracking-wide uppercase">Battle Complete</p>
+              <p class="text-2xl tracking-wide uppercase">
+                {{
+                  multiplayer.myPlayerNumber.value === winner
+                    ? "We have a victory!"
+                    : "You've been defeated by..."
+                }}
+              </p>
 
               <h1 class="text-5xl tracking-widest font-display uppercase">
-                {{ winner === 1 ? p1Card.name : p2Card.name }}
+                {{ winner === 1 ? p1Username : p2Username }}
               </h1>
 
               <img

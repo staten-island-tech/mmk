@@ -36,7 +36,7 @@ export function useMultiplayerBattle(
     else isWatchingRemoteMove = false;
   }
 
-  /** Synchronize with changes to the row. */
+  /** Post changes to the row. */
   async function syncDatabase() {
     if (!match.value || !myPlayerNumber.value || isWatchingRemoteMove) return;
 
@@ -61,16 +61,27 @@ export function useMultiplayerBattle(
       ? newState.currentPlayer === 1
         ? match.value.player1_uid
         : match.value.player2_uid
-      : match.value.current_turn; // Keep the existing current_turn
+      : match.value.current_turn;
 
     match.value.current_turn = nextTurnUid;
 
+    const updatePayload: any = {
+      game_state: newState,
+      current_turn: nextTurnUid,
+    };
+
+    // If someone already won, we should add it to the payload so that the database does not mark it as abandoned after the 30-second timeout.
+    if (newState.battleState === "finished") {
+      updatePayload.status = "finished";
+      updatePayload.winner =
+        newState.currentPlayer === 1
+          ? match.value.player1_uid
+          : match.value.player2_uid;
+    }
+
     await supabase
       .from("matches")
-      .update({
-        game_state: newState as any,
-        current_turn: nextTurnUid,
-      })
+      .update(updatePayload)
       .eq("id", matchId)
       .eq("current_turn", user.value!.sub);
   }
