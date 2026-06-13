@@ -157,7 +157,8 @@ CREATE TABLE IF NOT EXISTS "public"."matches" (
     "game_state" "jsonb",
     "status" "text" DEFAULT 'waiting'::"text" NOT NULL,
     "player1_card_id" bigint NOT NULL,
-    "player2_card_id" bigint NOT NULL
+    "player2_card_id" bigint NOT NULL,
+    "rewarded" boolean DEFAULT false NOT NULL
 );
 
 
@@ -185,6 +186,10 @@ COMMENT ON COLUMN "public"."matches"."player1_card_id" IS 'The ID of Player 1''s
 
 
 COMMENT ON COLUMN "public"."matches"."player2_card_id" IS 'The ID of Player 2''s battle card.';
+
+
+
+COMMENT ON COLUMN "public"."matches"."rewarded" IS 'Whether or not the winner has been rewarded.';
 
 
 

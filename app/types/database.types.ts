@@ -59,6 +59,7 @@ export type Database = {
           player1_uid: string;
           player2_card_id: number;
           player2_uid: string;
+          rewarded: boolean;
           status: string;
           winner: string | null;
         };
@@ -71,6 +72,7 @@ export type Database = {
           player1_uid: string;
           player2_card_id: number;
           player2_uid: string;
+          rewarded?: boolean;
           status?: string;
           winner?: string | null;
         };
@@ -83,6 +85,7 @@ export type Database = {
           player1_uid?: string;
           player2_card_id?: number;
           player2_uid?: string;
+          rewarded?: boolean;
           status?: string;
           winner?: string | null;
         };

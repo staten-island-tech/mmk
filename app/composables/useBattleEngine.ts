@@ -6,6 +6,8 @@ export function useBattleEngine(
   p2State: Ref<PlayerState | null>,
   p1Card: Ref<Card | null>,
   p2Card: Ref<Card | null>,
+  p1Username: Ref<string>,
+  p2Username: Ref<string>,
   currentPlayer: Ref<1 | 2>,
   battleState: Ref<BattleState>,
   winner: Ref<1 | 2 | null>,
@@ -37,8 +39,8 @@ export function useBattleEngine(
     };
 
     const entries: [string, PlayerState][] = [
-      [p1Card.value.name, p1State.value],
-      [p2Card.value.name, p2State.value],
+      [`${p1Username.value} (${p1Card.value.name})`, p1State.value],
+      [`${p2Username.value} (${p2Card.value.name})`, p2State.value],
     ];
 
     const turnsText = (t: number) => `${t} turn${t === 1 ? "" : "s"}`;

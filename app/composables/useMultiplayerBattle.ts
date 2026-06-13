@@ -1,6 +1,6 @@
 import type { Database } from "~/types/database.types";
 import type { Card, CardMove } from "~/types/collection";
-import type { SyncedGameState, BattleState } from "~/types/game";
+import type { SyncedGameState } from "~/types/game";
 
 export function useMultiplayerBattle(
   matchId: string,
@@ -15,7 +15,6 @@ export function useMultiplayerBattle(
 
   let isInitialLoad = true;
   let isRemoteUpdate = false;
-  let isWatchingRemoteMove = false;
 
   let pingInterval: ReturnType<typeof setInterval> | null = null;
   let watchInterval: ReturnType<typeof setInterval> | null = null;
@@ -27,18 +26,17 @@ export function useMultiplayerBattle(
 
   let channel: any = null;
 
-  /** Update the watching state. */
-  function updateWatchingState(currentP: 1 | 2, state: BattleState) {
-    if (state === "dialogue" || state === "effects")
-      isWatchingRemoteMove = currentP !== myPlayerNumber.value;
-    else if (state === "prevented")
-      isWatchingRemoteMove = currentP === myPlayerNumber.value;
-    else isWatchingRemoteMove = false;
-  }
-
   /** Post changes to the row. */
   async function syncDatabase() {
-    if (!match.value || !myPlayerNumber.value || isWatchingRemoteMove) return;
+    if (
+      !match.value ||
+      !myPlayerNumber.value ||
+      (engineRefs.battleState.value === "dialogue" &&
+        !engineRefs.currentDialogue.value) ||
+      (engineRefs.battleState.value === "prevented" &&
+        !engineRefs.preventedMessage.value)
+    )
+      return;
 
     const newState: SyncedGameState = {
       p1State: engineRefs.p1State.value,
@@ -79,11 +77,7 @@ export function useMultiplayerBattle(
           : match.value.player2_uid;
     }
 
-    await supabase
-      .from("matches")
-      .update(updatePayload)
-      .eq("id", matchId)
-      .eq("current_turn", user.value!.sub);
+    await supabase.from("matches").update(updatePayload).eq("id", matchId);
   }
 
   let syncQueue = Promise.resolve();
@@ -219,8 +213,6 @@ export function useMultiplayerBattle(
 
             isInitialLoad = false;
 
-            updateWatchingState(newState.currentPlayer, newState.battleState);
-
             nextTick().then(() => {
               isRemoteUpdate = false;
             });
@@ -241,8 +233,6 @@ export function useMultiplayerBattle(
     engineRefs.currentDialogue.value = gs.currentDialogue;
     engineRefs.effectsMessage.value = gs.effectsMessage;
     engineRefs.preventedMessage.value = gs.preventedMessage;
-
-    updateWatchingState(gs.currentPlayer, gs.battleState);
   }
 
   /** Start the game and set initial state. Should only be activated by the first player. */

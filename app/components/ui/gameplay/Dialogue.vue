@@ -47,6 +47,7 @@ const displayText = ref("");
 const timer = ref<number | null>(null);
 const finishTimer = ref<number | null>(null);
 const hasFinished = ref(false);
+let lastClickTime = 0;
 
 const slotText = computed(() => {
   const content = slots.default?.();
@@ -83,6 +84,8 @@ const startTyping = () => {
   hasFinished.value = false;
   displayText.value = "";
 
+  lastClickTime = Date.now(); // start cooldown on dialogue start
+
   const text = sourceText.value;
   if (!text) return;
 
@@ -102,6 +105,11 @@ const startTyping = () => {
 };
 
 const handleBoxClick = () => {
+  // Debounce time to prevent clicks within 500 milliseconds of each other
+  const now = Date.now();
+  if (now - lastClickTime < 500) return;
+  lastClickTime = now;
+
   if (displayText.value !== sourceText.value) {
     clearTimers();
     displayText.value = sourceText.value;
@@ -127,3 +135,4 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped></style>
+

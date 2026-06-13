@@ -26,9 +26,9 @@
             <div
               class="flex flex-col items-center gap-6 p-12 w-full border-y-8 border-double"
               :class="
-                winner === 1
-                  ? 'border-game-p1-accent text-game-p1-accent bg-game-p1-accent/10'
-                  : 'border-game-p2-accent text-game-p2-accent bg-game-p2-accent/10'
+                multiplayer.myPlayerNumber.value === winner
+                  ? 'border-primary-border text-primary-foreground bg-primary-foreground/15'
+                  : 'border-accent-border text-accent-foreground bg-accent-foreground/15'
               "
             >
               <p class="text-2xl tracking-wide uppercase">
@@ -56,28 +56,38 @@
 
               <div class="flex gap-5">
                 <button
-                  class="mt-4 px-8 py-2 min-w-36 text-lg tracking-wider border-4 border-double transition-all duration-150 hover:text-white active:scale-95"
-                  :class="
-                    winner === 1
-                      ? 'border-game-p1-accent hover:bg-game-p1-accent'
-                      : 'border-game-p2-accent hover:bg-game-p2-accent'
-                  "
-                  @click="navigateTo('/')"
+                  v-if="multiplayer.myPlayerNumber.value === winner"
+                  class="mt-4 px-8 py-2 min-w-36 text-lg tracking-wider border-4 border-double border-primary-border transition-all duration-150 hover:text-white hover:bg-primary-hover active:scale-95"
+                  @click="navigateTo(`/battle/win/${matchId}`)"
                 >
-                  Home
+                  Claim Reward
                 </button>
 
-                <button
-                  class="mt-4 px-4 py-2 min-w-36 text-lg tracking-wider border-4 border-double transition-all duration-150 hover:text-white active:scale-95"
-                  :class="
-                    winner === 1
-                      ? 'border-game-p1-accent hover:bg-game-p1-accent'
-                      : 'border-game-p2-accent hover:bg-game-p2-accent'
-                  "
-                  @click="navigateTo('/queue')"
-                >
-                  Requeue
-                </button>
+                <template v-else>
+                  <button
+                    class="mt-4 px-8 py-2 min-w-36 text-lg tracking-wider border-4 border-double transition-all duration-150 hover:text-white active:scale-95"
+                    :class="
+                      multiplayer.myPlayerNumber.value === winner
+                        ? 'border-primary-border hover:bg-primary-hover'
+                        : 'border-accent-border hover:bg-accent-hover'
+                    "
+                    @click="navigateTo('/')"
+                  >
+                    Home
+                  </button>
+
+                  <button
+                    class="mt-4 px-4 py-2 min-w-36 text-lg tracking-wider border-4 border-double transition-all duration-150 hover:text-white active:scale-95"
+                    :class="
+                      multiplayer.myPlayerNumber.value === winner
+                        ? 'border-primary-border hover:bg-primary-hover'
+                        : 'border-accent-border hover:bg-accent-hover'
+                    "
+                    @click="navigateTo('/queue')"
+                  >
+                    Requeue
+                  </button>
+                </template>
               </div>
             </div>
           </div>
@@ -210,7 +220,7 @@
             v-if="battleState !== 'finished'"
             class="z-20 p-8 w-full h-1/4 !max-w-full"
             :class="{
-              'opacity-50 pointer-events-none':
+              'pointer-events-none opacity-50':
                 battleState === 'player_turn' && multiplayer.isRemoteTurn.value,
             }"
           >
@@ -219,7 +229,11 @@
               class="h-full min-h-0"
             >
               <UiGameplayDialogue
-                :speaker="currentDialogue.speaker"
+                :speaker="
+                  currentPlayer === 1
+                    ? `${p1Username} (${p1Card.name})`
+                    : `${p2Username} (${p2Card.name})`
+                "
                 :dialogue-text="currentDialogue.text"
                 :typing-speed-cps="50"
                 @finished="onDialogueFinished"
@@ -240,7 +254,11 @@
 
             <div v-else-if="battleState === 'prevented'" class="h-full min-h-0">
               <UiGameplayDialogue
-                :speaker="currentPlayer === 1 ? p1Card.name : p2Card.name"
+                :speaker="
+                  currentPlayer === 1
+                    ? `${p1Username} (${p1Card.name})`
+                    : `${p2Username} (${p2Card.name})`
+                "
                 :dialogue-text="preventedMessage"
                 :typing-speed-cps="70"
                 @finished="onPreventedFinished"
@@ -382,6 +400,8 @@ const battle = useBattleEngine(
   p2State,
   p1Card,
   p2Card,
+  p1Username,
+  p2Username,
   currentPlayer,
   battleState,
   winner,
@@ -481,7 +501,9 @@ function onPreventedFinished() {
 watch(battleState, (val) => {
   if (val === "prevented" && p1Card.value && p2Card.value) {
     const name =
-      currentPlayer.value === 1 ? p1Card.value.name : p2Card.value.name;
+      currentPlayer.value === 1
+        ? `${p1Username.value} (${p1Card.value.name})`
+        : `${p2Username.value} (${p2Card.value.name})`;
     preventedMessage.value = `${name} is unable to move this turn.`;
   }
 });
