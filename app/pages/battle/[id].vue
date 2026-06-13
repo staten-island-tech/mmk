@@ -597,6 +597,30 @@ onMounted(async () => {
     } else if (multiplayer.myPlayerNumber.value === 1)
       await multiplayer.initializeGame(p1Card.value, p2Card.value);
 
+    if (
+      multiplayer.myPlayerNumber.value === 2 &&
+      (!matchData.game_state || !(matchData.game_state as any).initialized)
+    ) {
+      const pollInterval = setInterval(async () => {
+        const { data: updatedMatch } = await supabase
+          .from("matches")
+          .select("game_state")
+          .eq("id", matchId)
+          .single();
+
+        if (
+          updatedMatch?.game_state &&
+          (updatedMatch.game_state as any).initialized
+        ) {
+          clearInterval(pollInterval);
+          const gs = updatedMatch.game_state as any;
+          multiplayer.applyInitialState(gs);
+        }
+      }, 1000);
+
+      setTimeout(() => clearInterval(pollInterval), 30000); // stop polling after 30 seconds
+    }
+
     multiplayer.startHeartbeats();
 
     const src = resolveAudioSrc();
