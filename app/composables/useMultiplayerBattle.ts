@@ -1,5 +1,6 @@
+import type { Database } from "~/types/database.types";
 import type { Card, CardMove } from "~/types/collection";
-import type { SyncedGameState } from "~/types/game";
+import type { SyncedGameState, BattleState } from "~/types/game";
 
 export function useMultiplayerBattle(
   matchId: string,
@@ -26,15 +27,18 @@ export function useMultiplayerBattle(
 
   let channel: any = null;
 
+  /** Update the watching state. */
+  function updateWatchingState(currentP: 1 | 2, state: BattleState) {
+    if (state === "dialogue" || state === "effects")
+      isWatchingRemoteMove = currentP !== myPlayerNumber.value;
+    else if (state === "prevented")
+      isWatchingRemoteMove = currentP === myPlayerNumber.value;
+    else isWatchingRemoteMove = false;
+  }
+
   /** Synchronize with changes to the row. */
   async function syncDatabase() {
-    if (
-      !match.value ||
-      !myPlayerNumber.value ||
-      engineRefs.battleState.value === "finished" ||
-      isWatchingRemoteMove
-    )
-      return;
+    if (!match.value || !myPlayerNumber.value || isWatchingRemoteMove) return;
 
     const newState: SyncedGameState = {
       p1State: engineRefs.p1State.value,
@@ -49,10 +53,15 @@ export function useMultiplayerBattle(
       preventedMessage: engineRefs.preventedMessage.value,
     };
 
-    const nextTurnUid =
-      newState.currentPlayer === 1
+    const shouldUpdateTurn =
+      newState.battleState === "player_turn" ||
+      newState.battleState === "finished";
+
+    const nextTurnUid = shouldUpdateTurn
+      ? newState.currentPlayer === 1
         ? match.value.player1_uid
-        : match.value.player2_uid;
+        : match.value.player2_uid
+      : match.value.current_turn; // Keep the existing current_turn
 
     match.value.current_turn = nextTurnUid;
 
@@ -75,6 +84,7 @@ export function useMultiplayerBattle(
       currentDialogue: engineRefs.currentDialogue.value,
       effectsMessage: engineRefs.effectsMessage.value,
       preventedMessage: engineRefs.preventedMessage.value,
+      winner: engineRefs.winner.value,
       p1Hp: engineRefs.p1State.value?.hp,
       p2Hp: engineRefs.p2State.value?.hp,
       p1Energy: engineRefs.p1State.value?.moveEnergy,
@@ -121,7 +131,7 @@ export function useMultiplayerBattle(
       const lastPing = new Date(data.last_heartbeat).getTime();
       const now = Date.now();
 
-      if (now - lastPing > 15000) {
+      if (now - lastPing > 30000) {
         // assume they disconnected
         console.warn("Opponent disconnected. Claiming victory.");
 
@@ -174,7 +184,11 @@ export function useMultiplayerBattle(
 
           if (payload.new.status === "abandoned") {
             engineRefs.battleState.value = "finished";
-            engineRefs.winner.value = myPlayerNumber.value;
+
+            if (payload.new.winner === user.value?.sub)
+              engineRefs.winner.value = myPlayerNumber.value; // current player won
+            else engineRefs.winner.value = myPlayerNumber.value === 1 ? 2 : 1; // current player lost
+
             return;
           }
 
@@ -194,17 +208,7 @@ export function useMultiplayerBattle(
 
             isInitialLoad = false;
 
-            if (
-              newState.currentPlayer !== myPlayerNumber.value &&
-              newState.battleState !== "player_turn" &&
-              newState.battleState !== "finished"
-            )
-              isWatchingRemoteMove = true;
-            else if (
-              newState.battleState === "player_turn" ||
-              newState.battleState === "finished"
-            )
-              isWatchingRemoteMove = false; // turn done
+            updateWatchingState(newState.currentPlayer, newState.battleState);
 
             nextTick().then(() => {
               isRemoteUpdate = false;
@@ -227,10 +231,7 @@ export function useMultiplayerBattle(
     engineRefs.effectsMessage.value = gs.effectsMessage;
     engineRefs.preventedMessage.value = gs.preventedMessage;
 
-    isWatchingRemoteMove =
-      gs.currentPlayer !== myPlayerNumber.value &&
-      gs.battleState !== "player_turn" &&
-      gs.battleState !== "finished";
+    updateWatchingState(gs.currentPlayer, gs.battleState);
   }
 
   /** Start the game and set initial state. Should only be activated by the first player. */

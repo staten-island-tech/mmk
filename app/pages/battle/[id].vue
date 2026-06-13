@@ -454,7 +454,7 @@ function onEffectsFinished() {
 }
 
 function onPreventedFinished() {
-  if (currentPlayer.value !== multiplayer.myPlayerNumber.value) return;
+  if (currentPlayer.value === multiplayer.myPlayerNumber.value) return;
   if (!p1State.value || !p2State.value) return;
 
   const stateRef = currentPlayer.value === 1 ? p1State : p2State;
