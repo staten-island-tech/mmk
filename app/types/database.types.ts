@@ -152,6 +152,7 @@ export type Database = {
       };
       user_stats: {
         Row: {
+          battle_card: string | null;
           draft: number | null;
           games: number;
           onboarded: boolean;
@@ -159,6 +160,7 @@ export type Database = {
           wins: number;
         };
         Insert: {
+          battle_card?: string | null;
           draft?: number | null;
           games?: number;
           onboarded?: boolean;
@@ -166,13 +168,22 @@ export type Database = {
           wins?: number;
         };
         Update: {
+          battle_card?: string | null;
           draft?: number | null;
           games?: number;
           onboarded?: boolean;
           uid?: string;
           wins?: number;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "user_stats_battle_card_fkey";
+            columns: ["battle_card"];
+            isOneToOne: false;
+            referencedRelation: "user_cards";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: {

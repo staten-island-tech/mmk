@@ -1,6 +1,6 @@
 import type { Database } from "~/types/database.types";
 import type { Card } from "~/types/collection";
-import type { CombinedCard } from "~/types/user";
+import type { UserCard } from "~/types/user";
 
 export const useUserStore = defineStore("user", () => {
   const config = useRuntimeConfig();
@@ -12,7 +12,9 @@ export const useUserStore = defineStore("user", () => {
   /** The number of games the user has played. (int32) */
   const games = ref<number | null>(null);
   /** The array of card IDs the user owns. (int32[]) */
-  const cards = ref<CombinedCard[] | null>(null);
+  const cards = ref<UserCard[] | null>(null);
+  /** The card the user fights with in matches. (uuid) */
+  const battleCard = ref<string | null>(null);
 
   const isLoading = ref<boolean>(false);
   const isOnCooldown = ref<boolean>(false);
@@ -47,13 +49,15 @@ export const useUserStore = defineStore("user", () => {
         const parsed: {
           wins: number;
           games: number;
-          cards: CombinedCard[];
+          cards: UserCard[];
+          battleCard: string;
           timestamp: number;
         } = JSON.parse(cached);
         if (Date.now() - parsed.timestamp < CACHE_TTL) {
           wins.value = parsed.wins;
           games.value = parsed.games;
           cards.value = parsed.cards;
+          battleCard.value = parsed.battleCard;
         } else localStorage.removeItem(STORAGE_KEY); // expired cache
       }
     } catch (_) {
@@ -92,9 +96,17 @@ export const useUserStore = defineStore("user", () => {
       const { data: stats } = await $fetch("/api/stats");
       wins.value = stats.wins;
       games.value = stats.games;
+      battleCard.value = stats.battle_card;
 
+      // Map each card ID to its reference ID and obtain date
       const cardsMap = new Map(
-        stats.cards.map((c) => [c.card_id, c.obtained_at]),
+        stats.cards.map((c) => [
+          c.card_id,
+          {
+            referenceId: c.id,
+            obtainedAt: c.obtained_at,
+          },
+        ]),
       );
 
       // Get all cards from card IDs
@@ -107,7 +119,12 @@ export const useUserStore = defineStore("user", () => {
 
       cards.value = cardsData.map((card) => ({
         ...card,
-        obtained_at: cardsMap.get(card.id),
+        /* The card ID will always be in the map because, as long as the fetch doesn't fail, it will always return Card[].
+         * Each Card object will always contain a card ID.
+         * Since the array of cards will never contain any card that the user does not own, we know (for sure) that `cardsMap` will always contain all of them.
+         */
+        reference_id: cardsMap.get(card.id)!.referenceId,
+        obtained_at: cardsMap.get(card.id)!.obtainedAt,
       })); // add card obtain timestamp
 
       saveToCache();
@@ -152,6 +169,7 @@ export const useUserStore = defineStore("user", () => {
     cards,
     wins,
     games,
+    battleCard,
     rank,
     isLoading,
     isOnCooldown,

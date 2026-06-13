@@ -243,7 +243,8 @@ CREATE TABLE IF NOT EXISTS "public"."user_stats" (
     "wins" integer DEFAULT 0 NOT NULL,
     "games" integer DEFAULT 0 NOT NULL,
     "onboarded" boolean DEFAULT false NOT NULL,
-    "draft" integer
+    "draft" integer,
+    "battle_card" "uuid"
 );
 
 
@@ -267,6 +268,10 @@ COMMENT ON COLUMN "public"."user_stats"."onboarded" IS 'Whether or not the user 
 
 
 COMMENT ON COLUMN "public"."user_stats"."draft" IS 'The ID of the user''s starter card drawn in the onboarding.';
+
+
+
+COMMENT ON COLUMN "public"."user_stats"."battle_card" IS 'The card the user fights with in matches.';
 
 
 
@@ -346,6 +351,11 @@ ALTER TABLE ONLY "public"."matchmaking_queue"
 
 ALTER TABLE ONLY "public"."user_cards"
     ADD CONSTRAINT "user_cards_uid_fkey" FOREIGN KEY ("uid") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_stats"
+    ADD CONSTRAINT "user_stats_battle_card_fkey" FOREIGN KEY ("battle_card") REFERENCES "public"."user_cards"("id") ON DELETE SET NULL;
 
 
 

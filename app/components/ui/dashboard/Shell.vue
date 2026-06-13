@@ -90,7 +90,7 @@
 
         <Icon
           v-else
-          title="Force-Reload Stats"
+          title="Force-reload stats"
           name="pixelarticons:reload"
           class="w-4 h-4"
         />

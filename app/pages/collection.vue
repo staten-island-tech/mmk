@@ -55,8 +55,29 @@
           <div class="flex flex-wrap justify-center w-full h-full gap-12">
             <UiCardSimple
               v-for="card in filteredCards"
-              class="flex flex-col w-[28rem] h-[34rem]"
+              class="group/card relative flex flex-col w-[28rem] h-[34rem]"
             >
+              <button
+                title="Set as battle card"
+                class="group/battle-card-button absolute top-4 right-4 flex justify-center items-center p-0 w-10 h-10 border-4 border-double transition-all duration-150 active:scale-90 group-hover/card:opacity-100"
+                :class="
+                  card.reference_id === user.battleCard
+                    ? 'border-primary-border bg-primary hover:bg-primary-hover'
+                    : 'border-secondary-border bg-secondary hover:bg-secondary-hover opacity-0'
+                "
+                @click="setBattleCard(card.reference_id)"
+              >
+                <Icon
+                  name="pixelarticons:trophy"
+                  class="w-5 h-5 transition-all duration-150"
+                  :class="
+                    card.reference_id === user.battleCard
+                      ? 'text-primary-foreground group-hover/battle-card-button:text-primary-hover-foreground'
+                      : 'text-secondary-foreground group-hover/battle-card-button:text-secondary-hover-foreground'
+                  "
+                />
+              </button>
+
               <div
                 class="flex-1 flex justify-center items-center p-8 w-full min-h-48 bg-slate-300"
               >
@@ -189,6 +210,27 @@ async function loadCards() {
     return;
   } finally {
     loading.value = false;
+  }
+}
+
+async function setBattleCard(referenceId: string) {
+  try {
+    const current = user.battleCard;
+    const isSame = current === referenceId;
+    const payload = isSame ? null : referenceId;
+
+    await $fetch("/api/user/primary-card", {
+      method: "POST",
+      body: { id: payload },
+    });
+
+    user.battleCard = payload;
+
+    await user.fetchStats(true);
+  } catch (e: any) {
+    dialogTitle.value = "Error Setting Battle Card";
+    dialogMessage.value = e.statusMessage;
+    dialogOpen.value = true;
   }
 }
 
