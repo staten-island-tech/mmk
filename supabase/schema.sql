@@ -80,6 +80,21 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 
 
 
+CREATE OR REPLACE FUNCTION "public"."get_user_display_names"("user_ids" "uuid"[]) RETURNS TABLE("id" "uuid", "display_name" "text")
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  SELECT 
+    id, 
+    raw_user_meta_data->>'display_name' AS display_name
+  FROM auth.users
+  WHERE id = ANY(user_ids);
+$$;
+
+
+ALTER FUNCTION "public"."get_user_display_names"("user_ids" "uuid"[]) OWNER TO "supabase_admin";
+
+
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -339,15 +354,15 @@ ALTER TABLE ONLY "public"."user_stats"
 
 
 
+CREATE POLICY "Allow users to view own data" ON "public"."user_stats" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "uid"));
+
+
+
 CREATE POLICY "Authenticated users can read heartbeats" ON "public"."battle_heartbeats" FOR SELECT TO "authenticated" USING (true);
 
 
 
 CREATE POLICY "Users can manage own queue row" ON "public"."matchmaking_queue" TO "authenticated" USING (("uid" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("uid" = ( SELECT "auth"."uid"() AS "uid")));
-
-
-
-CREATE POLICY "Users can read own data" ON "public"."user_stats" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "uid"));
 
 
 
@@ -638,6 +653,13 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 
 
+
+
+
+GRANT ALL ON FUNCTION "public"."get_user_display_names"("user_ids" "uuid"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."get_user_display_names"("user_ids" "uuid"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."get_user_display_names"("user_ids" "uuid"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_user_display_names"("user_ids" "uuid"[]) TO "service_role";
 
 
 

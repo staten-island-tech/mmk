@@ -45,7 +45,7 @@
               />
 
               <p class="text-xl tracking-wide">
-                {{ winner === 1 ? "Player 1" : "Player 2" }} {{ winMessage }}.
+                {{ winner === 1 ? p1Username : p2Username }} {{ winMessage }}.
               </p>
 
               <div class="flex gap-5">
@@ -136,7 +136,7 @@
               :card="p2Card"
               :state="p2State"
               :is-active="currentPlayer === 2 && battleState === 'player_turn'"
-              playerLabel="Player 2"
+              :playerLabel="p2Username"
               :accent="2"
             />
           </div>
@@ -147,7 +147,7 @@
               :card="p1Card"
               :state="p1State"
               :is-active="currentPlayer === 1 && battleState === 'player_turn'"
-              playerLabel="Player 1"
+              :playerLabel="p1Username"
               :accent="1"
               :flip="true"
             />
@@ -258,7 +258,7 @@
                       : 'text-game-p2-accent'
                   "
                 >
-                  {{ currentPlayer === 1 ? p1Card.name : p2Card.name }}
+                  {{ currentPlayer === 1 ? p1Username : p2Username }}
                 </p>
                 <p class="text-md tracking-widest font-alt uppercase">do?</p>
               </div>
@@ -307,6 +307,7 @@
 </template>
 
 <script setup lang="ts">
+import type { Database } from "~/types/database.types";
 import type { Card, CardMove } from "~/types/collection";
 import type {
   BattleState,
@@ -320,6 +321,9 @@ const config = useRuntimeConfig();
 const user = useSupabaseUser();
 const route = useRoute();
 const matchId = route.params.id as string;
+
+const p1Username = ref<string>("Player 1");
+const p2Username = ref<string>("Player 2");
 
 const battleState = ref<BattleState>("player_turn");
 const p1Card = ref<Card | null>(null);
@@ -536,6 +540,18 @@ onMounted(async () => {
     else if (matchData.player2_uid === userId)
       multiplayer.myPlayerNumber.value = 2;
     else throw new Error("You are not part of this match.");
+
+    const { data: users } = await supabase.rpc("get_user_display_names", {
+      user_ids: [matchData.player1_uid, matchData.player2_uid],
+    });
+
+    if (users) {
+      const p1User = users.find((u) => u.id === matchData.player1_uid);
+      const p2User = users.find((u) => u.id === matchData.player2_uid);
+
+      if (p1User?.display_name) p1Username.value = p1User.display_name;
+      if (p2User?.display_name) p2Username.value = p2User.display_name;
+    }
 
     const [p1Data, p2Data] = await Promise.all([
       $fetch<Card[]>(`${config.public.mmkPanelApi}/cards`, {

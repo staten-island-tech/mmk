@@ -179,6 +179,13 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      get_user_display_names: {
+        Args: { user_ids: string[] };
+        Returns: {
+          display_name: string;
+          id: string;
+        }[];
+      };
       release_matchmaking_lock: { Args: never; Returns: undefined };
       try_matchmaking_lock: { Args: never; Returns: boolean };
     };
