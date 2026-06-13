@@ -21,7 +21,25 @@ export const useUserStore = defineStore("user", () => {
   const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   const COOLDOWN_MS = 10000;
 
+  const hasCheckedAuth = ref(false);
+
+  let unsubscribe: (() => void) | undefined;
+
   if (import.meta.client) {
+    supabase.auth.getSession().then(() => {
+      hasCheckedAuth.value = true;
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_OUT" || !session) invalidateCache();
+      },
+    );
+
+    unsubscribe = () => {
+      authListener.subscription.unsubscribe();
+    };
+
     // load user cache on store init
     try {
       const cached = localStorage.getItem(STORAGE_KEY);
@@ -104,10 +122,14 @@ export const useUserStore = defineStore("user", () => {
   /** Clear cache and force refresh. */
   function invalidateCache() {
     localStorage.removeItem(STORAGE_KEY);
+
     cards.value = null;
     wins.value = null;
     games.value = null;
     isOnCooldown.value = false;
+
+    unsubscribe?.();
+    unsubscribe = undefined;
   }
 
   /** Save current state to cache, */
