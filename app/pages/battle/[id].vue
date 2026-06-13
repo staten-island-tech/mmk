@@ -2,7 +2,7 @@
   <div class="select-none relative flex flex-col w-full h-screen">
     <Transition name="game" mode="out-in">
       <div
-        v-if="!p1Card || !p2Card"
+        v-if="!p1Card || !p2Card || !p1State || !p2State"
         key="loading"
         class="flex flex-col gap-4 justify-center items-center h-full text-blue-200"
       >
@@ -203,6 +203,10 @@
           <UiCardSimple
             v-if="battleState !== 'finished'"
             class="z-20 p-8 w-full h-1/4 !max-w-full"
+            :class="{
+              'opacity-50 pointer-events-none':
+                battleState === 'player_turn' && multiplayer.isRemoteTurn.value,
+            }"
           >
             <div
               v-if="battleState === 'dialogue' && currentDialogue"
@@ -311,26 +315,28 @@ import type {
   DialogueLine,
 } from "~/types/game";
 
+const supabase = useSupabaseClient<Database>();
 const config = useRuntimeConfig();
+const user = useSupabaseUser();
+const route = useRoute();
+const matchId = route.params.id as string;
 
+const battleState = ref<BattleState>("player_turn");
 const p1Card = ref<Card | null>(null);
 const p2Card = ref<Card | null>(null);
-const isLoading = ref(true);
-
 const p1State = ref<PlayerState | null>(null);
 const p2State = ref<PlayerState | null>(null);
+const currentPlayer = ref<1 | 2>(1);
+const winner = ref<1 | 2 | null>(null);
 const activeDomain = ref<ActiveDomain | null>(null);
 const domainJustActivated = ref<boolean>(false);
-const currentPlayer = ref<1 | 2>(1);
-const battleState = ref<BattleState>("player_turn");
-const winner = ref<1 | 2 | null>(null);
+const effectsMessage = ref<string>("");
 
 const dialogueQueue = ref<DialogueLine[]>([]);
 const currentDialogue = ref<DialogueLine | null>(null);
 let afterDialogueCallback: (() => void) | null = null;
-
-const effectsMessage = ref<string>("");
 const preventedMessage = ref<string>("");
+
 const winMessage = computed<string>(() => {
   const messages = [
     "was a tad bit stronger",
@@ -343,17 +349,8 @@ const winMessage = computed<string>(() => {
 });
 
 const audioRef = ref<HTMLAudioElement | null>(null);
-
-const domainComponent = ref<{
-  THEME_BACKGROUND: string;
-  THEME_BACKGROUND_GRID: string;
-  THEME_GROUND: string;
-  THEME_GROUND_GRID: string;
-} | null>(null);
-const domainComponentMap: Record<
-  string,
-  ReturnType<typeof resolveComponent>
-> = {
+const domainComponent = ref<any>(null);
+const domainComponentMap: Record<string, any> = {
   DomainsMalice: resolveComponent("DomainsMalice"),
   DomainsWormhole: resolveComponent("DomainsWormhole"),
   DomainsStargate: resolveComponent("DomainsStargate"),
@@ -371,7 +368,6 @@ const currentPlayerState = computed<PlayerState>(() => {
 });
 
 const battle = useBattleEngine(
-  // game engine and utils
   p1State,
   p2State,
   p1Card,
@@ -384,24 +380,37 @@ const battle = useBattleEngine(
   effectsMessage,
 );
 
+const multiplayer = useMultiplayerBattle(matchId, battle, {
+  p1State,
+  p2State,
+  p1Card,
+  p2Card,
+  currentPlayer,
+  battleState,
+  winner,
+  activeDomain,
+  domainJustActivated,
+  effectsMessage,
+  currentDialogue,
+  preventedMessage,
+});
+
 function selectMove(cardMove: CardMove) {
   if (battleState.value !== "player_turn") return;
+  if (currentPlayer.value !== multiplayer.myPlayerNumber.value) return;
 
   const move = cardMove.move;
-
   const selfCard = currentPlayer.value === 1 ? p1Card.value! : p2Card.value!;
   const enemyCard = currentPlayer.value === 1 ? p2Card.value! : p1Card.value!;
 
   dialogueQueue.value = [];
-
   if (move.selfCustomDialogue)
     enqueueDialogue(selfCard.name, move.selfCustomDialogue);
-
   if (move.enemyCustomDialogue)
     enqueueDialogue(enemyCard.name, move.enemyCustomDialogue);
 
   const runMoveExecution = () => {
-    battle.executeMove(move);
+    multiplayer.submitMove(move);
   };
 
   if (dialogueQueue.value.length > 0) startDialogueQueue(runMoveExecution);
@@ -440,10 +449,12 @@ function onDialogueFinished() {
 }
 
 function onEffectsFinished() {
+  if (currentPlayer.value !== multiplayer.myPlayerNumber.value) return;
   battle.onEffectsFinished();
 }
 
 function onPreventedFinished() {
+  if (currentPlayer.value !== multiplayer.myPlayerNumber.value) return;
   if (!p1State.value || !p2State.value) return;
 
   const stateRef = currentPlayer.value === 1 ? p1State : p2State;
@@ -471,19 +482,61 @@ function resolveAudioSrc(): string | null {
   const p1Audio = p1Card.value.audio;
   const p2Audio = p2Card.value.audio;
 
-  if (p1Audio && p2Audio) {
-    const useP1 = p1Card.value.rarity.weight >= p2Card.value.rarity.weight;
-    return useP1 ? p1Audio : p2Audio;
-  }
+  if (p1Audio && p2Audio)
+    return p1Card.value.rarity.weight >= p2Card.value.rarity.weight
+      ? p1Audio
+      : p2Audio;
 
-  if (p1Audio) return p1Audio;
-  if (p2Audio) return p2Audio;
+  return p1Audio || p2Audio || null;
+}
 
-  return null;
+function handleUnload() {
+  if (!user.value?.sub || !matchId) return;
+
+  navigator.sendBeacon(
+    "/api/battle/leave",
+    new Blob(
+      [
+        JSON.stringify({
+          uid: user.value.sub,
+          matchId: matchId,
+        }),
+      ],
+      { type: "application/json" },
+    ),
+  );
 }
 
 onMounted(async () => {
   try {
+    if (!user.value) {
+      await new Promise<void>((resolve) => {
+        const stop = watch(user, (val) => {
+          if (val) {
+            stop();
+            resolve();
+          }
+        });
+      });
+    }
+
+    const userId = user.value?.sub;
+    if (!userId) throw new Error("You must be logged in to play.");
+
+    const { data: matchData, error } = await supabase
+      .from("matches")
+      .select("*")
+      .eq("id", matchId)
+      .single();
+
+    if (error || !matchData) throw new Error("Match not found.");
+    multiplayer.match.value = matchData;
+
+    if (matchData.player1_uid === userId) multiplayer.myPlayerNumber.value = 1;
+    else if (matchData.player2_uid === userId)
+      multiplayer.myPlayerNumber.value = 2;
+    else throw new Error("You are not part of this match.");
+
     const [p1Data, p2Data] = await Promise.all([
       $fetch<Card[]>(`${config.public.mmkPanelApi}/cards`, {
         query: { id: 11 },
@@ -495,37 +548,60 @@ onMounted(async () => {
 
     p1Card.value = p1Data[0] || null;
     p2Card.value = p2Data[0] || null;
+    if (!p1Card.value || !p2Card.value) throw new Error("Cards not found.");
 
-    if (p1Card.value && p2Card.value) {
-      p1State.value = battle.createPlayerState(p1Card.value);
-      p2State.value = battle.createPlayerState(p2Card.value);
+    multiplayer.subscribe();
 
-      battle.initializeBattle();
+    /* If Player 1 disconnects, Player 2 wins, and Player 1 refreshes, the page won't realize the match was abandoned.
+     * The first check here just makes sure the match was actually abandoned.
+     */
+    if (matchData.status === "abandoned") {
+      battleState.value = "finished";
+      winner.value =
+        matchData.winner === userId
+          ? multiplayer.myPlayerNumber.value
+          : multiplayer.myPlayerNumber.value === 1
+            ? 2
+            : 1;
+    } else if (
+      matchData.game_state &&
+      (matchData.game_state as any).initialized
+    ) {
+      const gs = matchData.game_state as any;
+      multiplayer.applyInitialState(gs);
+    } else if (multiplayer.myPlayerNumber.value === 1)
+      await multiplayer.initializeGame(p1Card.value, p2Card.value);
 
-      const src = resolveAudioSrc();
-      if (src) {
-        const audio = new Audio(src);
-        audio.loop = true;
-        audio.volume = 0.5;
-        audio.play().catch(() => {
-          const resume = () => {
-            audio.play();
-            window.removeEventListener("pointerdown", resume);
-          };
+    multiplayer.startHeartbeats();
 
-          window.addEventListener("pointerdown", resume);
-        });
-        audioRef.value = audio;
-      }
+    const src = resolveAudioSrc();
+    if (src) {
+      const audio = new Audio(src);
+      audio.loop = true;
+      audio.volume = 0.5;
+      audio.play().catch(() => {
+        const resume = () => {
+          audio.play();
+          window.removeEventListener("pointerdown", resume);
+        };
+        window.addEventListener("pointerdown", resume);
+      });
+      audioRef.value = audio;
     }
-  } catch (_) {
-    isLoading.value = false;
+
+    window.addEventListener("beforeunload", handleUnload);
+  } catch (e) {
+    console.error(e);
   }
 });
 
 onBeforeUnmount(() => {
   audioRef.value?.pause();
   audioRef.value = null;
+
+  multiplayer.cleanup();
+
+  window.removeEventListener("beforeunload", handleUnload);
 });
 </script>
 

@@ -1,15 +1,65 @@
 jobid,schedule,command,nodename,nodeport,database,username,active,jobname
-1,* * * * *,"
-  delete from matchmaking_heartbeats
-  where last_heartbeat < now() - interval '15 seconds';
+2,* * * * *,"delete from battle_heartbeats
+where
+  last_heartbeat < now() - interval '15 seconds';
 
-  delete from matchmaking_queue
-  where uid in (
-    select q.uid 
-    from matchmaking_queue q
-    left join matchmaking_heartbeats h on h.uid = q.uid
-    where h.uid is null 
-    or h.last_heartbeat < now() - interval '15 seconds'
+update matches m
+set
+  status = 'abandoned',
+  winner = case
+    when exists (
+      select
+        1
+      from
+        battle_heartbeats h
+      where
+        h.uid = m.player1_uid
+        and h.last_heartbeat >= now() - interval '15 seconds'
+    ) then m.player1_uid
+    else m.player2_uid
+  end
+where
+  m.status = 'in_progress'
+  and (
+    not exists (
+      select
+        1
+      from
+        battle_heartbeats h
+      where
+        h.uid = m.player1_uid
+        and h.last_heartbeat >= now() - interval '15 seconds'
+    )
+    or not exists (
+      select
+        1
+      from
+        battle_heartbeats h
+      where
+        h.uid = m.player2_uid
+        and h.last_heartbeat >= now() - interval '15 seconds'
+    )
+  );",localhost,5432,postgres,supabase_admin,true,cleanup-stale-battles
+1,* * * * *,"delete from matchmaking_heartbeats
+where
+  last_heartbeat < now() - interval '15 seconds';
+
+delete from matchmaking_queue
+where
+  uid in (
+    select
+      q.uid
+    from
+      matchmaking_queue q
+      left join matchmaking_heartbeats h on h.uid = q.uid
+    where
+      h.uid is null
+      or h.last_heartbeat < now() - interval '15 seconds'
   )
-  and status = 'waiting';
-  ",localhost,5432,postgres,supabase_admin,true,cleanup-stale-queue
+  and status = 'waiting';",localhost,5432,postgres,supabase_admin,true,cleanup-stale-queue
+5,0 0 * * *,"update public.matches
+set
+  game_state = '{}'
+where
+  status in ('finished', 'abandoned')
+  and created_at < now() - interval '7 days';",localhost,5432,postgres,supabase_admin,true,cleanup-old-battles

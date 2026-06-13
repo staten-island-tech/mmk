@@ -34,30 +34,51 @@ export type Database = {
   };
   public: {
     Tables: {
+      battle_heartbeats: {
+        Row: {
+          last_heartbeat: string;
+          uid: string;
+        };
+        Insert: {
+          last_heartbeat?: string;
+          uid?: string;
+        };
+        Update: {
+          last_heartbeat?: string;
+          uid?: string;
+        };
+        Relationships: [];
+      };
       matches: {
         Row: {
           created_at: string;
           current_turn: string | null;
+          game_state: Json | null;
           id: string;
           player1_uid: string;
           player2_uid: string;
           status: string;
+          winner: string | null;
         };
         Insert: {
           created_at?: string;
           current_turn?: string | null;
+          game_state?: Json | null;
           id?: string;
           player1_uid: string;
           player2_uid: string;
           status?: string;
+          winner?: string | null;
         };
         Update: {
           created_at?: string;
           current_turn?: string | null;
+          game_state?: Json | null;
           id?: string;
           player1_uid?: string;
           player2_uid?: string;
           status?: string;
+          winner?: string | null;
         };
         Relationships: [];
       };

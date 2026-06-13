@@ -118,7 +118,7 @@ async function joinQueue() {
         // Enter match
         if (payload.new.status === "matched") {
           leaveQueue(false);
-          navigateTo(`/game/${payload.new.match_id}`);
+          navigateTo(`/battle/${payload.new.match_id}`);
         }
       },
     )

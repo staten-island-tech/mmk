@@ -119,13 +119,28 @@ SET default_tablespace = '';
 SET default_table_access_method = "heap";
 
 
+CREATE TABLE IF NOT EXISTS "public"."battle_heartbeats" (
+    "uid" "uuid" DEFAULT "auth"."uid"() NOT NULL,
+    "last_heartbeat" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."battle_heartbeats" OWNER TO "supabase_admin";
+
+
+COMMENT ON TABLE "public"."battle_heartbeats" IS 'Updates to users in battle.';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."matches" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "player1_uid" "uuid" NOT NULL,
     "player2_uid" "uuid" NOT NULL,
-    "status" "text" DEFAULT 'waiting'::"text" NOT NULL,
     "current_turn" "uuid",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "winner" "uuid",
+    "game_state" "jsonb",
+    "status" "text" DEFAULT 'waiting'::"text" NOT NULL
 );
 
 
@@ -133,6 +148,18 @@ ALTER TABLE "public"."matches" OWNER TO "supabase_admin";
 
 
 COMMENT ON TABLE "public"."matches" IS 'List of matches between users.';
+
+
+
+COMMENT ON COLUMN "public"."matches"."winner" IS 'The player who won the match.';
+
+
+
+COMMENT ON COLUMN "public"."matches"."game_state" IS 'The state of the game.';
+
+
+
+COMMENT ON COLUMN "public"."matches"."status" IS 'The status of the match.';
 
 
 
@@ -228,6 +255,11 @@ COMMENT ON COLUMN "public"."user_stats"."draft" IS 'The ID of the user''s starte
 
 
 
+ALTER TABLE ONLY "public"."battle_heartbeats"
+    ADD CONSTRAINT "battle_heartbeats_pkey" PRIMARY KEY ("uid");
+
+
+
 ALTER TABLE ONLY "public"."matches"
     ADD CONSTRAINT "matches_pkey" PRIMARY KEY ("id");
 
@@ -253,7 +285,12 @@ ALTER TABLE ONLY "public"."user_stats"
 
 
 
-CREATE OR REPLACE TRIGGER "trigger_matchmaking" AFTER INSERT OR UPDATE ON "public"."matchmaking_heartbeats" FOR EACH ROW EXECUTE FUNCTION "supabase_functions"."http_request"('https://mmk-supa.duckdns.org/functions/v1/matchmaking', 'POST', '{"Content-type":"application/json","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc3NjU0NjQ4LCJleHAiOjE5MzUzMzQ2NDh9.RuHlIkaUq03xowU5W-nupnmqJEXabRXNlWH1aPfs_V0"}', '{}', '5000');
+CREATE OR REPLACE TRIGGER "trigger_matchmaking" AFTER INSERT OR UPDATE ON "public"."matchmaking_heartbeats" FOR EACH ROW EXECUTE FUNCTION "supabase_functions"."http_request"('https://YOUR_SUPABASE_URL/functions/v1/matchmaking', 'POST', '{"Content-type":"application/json","Authorization":"Bearer YOUR_ANON_KEY"}', '{}', '5000');
+
+
+
+ALTER TABLE ONLY "public"."battle_heartbeats"
+    ADD CONSTRAINT "battle_heartbeats_uid_fkey" FOREIGN KEY ("uid") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -269,6 +306,11 @@ ALTER TABLE ONLY "public"."matches"
 
 ALTER TABLE ONLY "public"."matches"
     ADD CONSTRAINT "matches_player2_uid_fkey" FOREIGN KEY ("player2_uid") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."matches"
+    ADD CONSTRAINT "matches_winner_fkey" FOREIGN KEY ("winner") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
 
 
 
@@ -297,6 +339,10 @@ ALTER TABLE ONLY "public"."user_stats"
 
 
 
+CREATE POLICY "Authenticated users can read heartbeats" ON "public"."battle_heartbeats" FOR SELECT TO "authenticated" USING (true);
+
+
+
 CREATE POLICY "Users can manage own queue row" ON "public"."matchmaking_queue" TO "authenticated" USING (("uid" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("uid" = ( SELECT "auth"."uid"() AS "uid")));
 
 
@@ -309,12 +355,23 @@ CREATE POLICY "Users can read own matches" ON "public"."matches" FOR SELECT USIN
 
 
 
+CREATE POLICY "Users can update own matches" ON "public"."matches" FOR UPDATE USING (((( SELECT "auth"."uid"() AS "uid") = "player1_uid") OR (( SELECT "auth"."uid"() AS "uid") = "player2_uid")));
+
+
+
+CREATE POLICY "Users can upsert own heartbeat" ON "public"."battle_heartbeats" USING (("uid" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("uid" = ( SELECT "auth"."uid"() AS "uid")));
+
+
+
 CREATE POLICY "Users can upsert own heartbeat" ON "public"."matchmaking_heartbeats" TO "authenticated" USING (("uid" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("uid" = ( SELECT "auth"."uid"() AS "uid")));
 
 
 
 CREATE POLICY "Users can view own cards" ON "public"."user_cards" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "uid"));
 
+
+
+ALTER TABLE "public"."battle_heartbeats" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."matches" ENABLE ROW LEVEL SECURITY;
@@ -628,6 +685,13 @@ GRANT ALL ON FUNCTION "public"."try_matchmaking_lock"() TO "service_role";
 
 
 
+
+
+
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."battle_heartbeats" TO "postgres";
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."battle_heartbeats" TO "anon";
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."battle_heartbeats" TO "authenticated";
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."battle_heartbeats" TO "service_role";
 
 
 

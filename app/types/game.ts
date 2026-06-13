@@ -5,6 +5,19 @@ export type BattleState =
   | "prevented"
   | "finished";
 
+export interface SyncedGameState {
+  p1State: PlayerState;
+  p2State: PlayerState;
+  currentPlayer: 1 | 2;
+  activeDomain: ActiveDomain | null;
+  battleState: BattleState;
+  winner: 1 | 2 | null;
+  initialized: boolean;
+  currentDialogue: DialogueLine | null;
+  effectsMessage: string;
+  preventedMessage: string;
+}
+
 export interface ActiveEffect {
   type:
     | "attackMul"
