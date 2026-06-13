@@ -155,7 +155,9 @@ CREATE TABLE IF NOT EXISTS "public"."matches" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "winner" "uuid",
     "game_state" "jsonb",
-    "status" "text" DEFAULT 'waiting'::"text" NOT NULL
+    "status" "text" DEFAULT 'waiting'::"text" NOT NULL,
+    "player1_card_id" bigint NOT NULL,
+    "player2_card_id" bigint NOT NULL
 );
 
 
@@ -175,6 +177,14 @@ COMMENT ON COLUMN "public"."matches"."game_state" IS 'The state of the game.';
 
 
 COMMENT ON COLUMN "public"."matches"."status" IS 'The status of the match.';
+
+
+
+COMMENT ON COLUMN "public"."matches"."player1_card_id" IS 'The ID of Player 1''s battle card.';
+
+
+
+COMMENT ON COLUMN "public"."matches"."player2_card_id" IS 'The ID of Player 2''s battle card.';
 
 
 

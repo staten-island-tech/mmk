@@ -71,10 +71,10 @@ export function useMultiplayerBattle(
     };
 
     // If someone already won, we should add it to the payload so that the database does not mark it as abandoned after the 30-second timeout.
-    if (newState.battleState === "finished") {
+    if (newState.battleState === "finished" && newState.winner) {
       updatePayload.status = "finished";
       updatePayload.winner =
-        newState.currentPlayer === 1
+        newState.winner === 1
           ? match.value.player1_uid
           : match.value.player2_uid;
     }

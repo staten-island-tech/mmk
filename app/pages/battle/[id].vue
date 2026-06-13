@@ -559,12 +559,15 @@ onMounted(async () => {
       if (p2User?.display_name) p2Username.value = p2User.display_name;
     }
 
+    if (!matchData.player1_card_id || !matchData.player2_card_id)
+      throw new Error("Card IDs missing from match.");
+
     const [p1Data, p2Data] = await Promise.all([
       $fetch<Card[]>(`${config.public.mmkPanelApi}/cards`, {
-        query: { id: 11 },
+        query: { id: matchData.player1_card_id },
       }),
       $fetch<Card[]>(`${config.public.mmkPanelApi}/cards`, {
-        query: { id: 13 },
+        query: { id: matchData.player2_card_id },
       }),
     ]);
 

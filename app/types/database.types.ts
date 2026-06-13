@@ -55,7 +55,9 @@ export type Database = {
           current_turn: string | null;
           game_state: Json | null;
           id: string;
+          player1_card_id: number;
           player1_uid: string;
+          player2_card_id: number;
           player2_uid: string;
           status: string;
           winner: string | null;
@@ -65,7 +67,9 @@ export type Database = {
           current_turn?: string | null;
           game_state?: Json | null;
           id?: string;
+          player1_card_id: number;
           player1_uid: string;
+          player2_card_id: number;
           player2_uid: string;
           status?: string;
           winner?: string | null;
@@ -75,7 +79,9 @@ export type Database = {
           current_turn?: string | null;
           game_state?: Json | null;
           id?: string;
+          player1_card_id?: number;
           player1_uid?: string;
+          player2_card_id?: number;
           player2_uid?: string;
           status?: string;
           winner?: string | null;
