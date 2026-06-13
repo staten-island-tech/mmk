@@ -9,9 +9,29 @@
       {{ dialogMessage }}
     </UiModalSimple>
 
-    <div class="p-12 h-full">
+    <div class="overflow-hidden flex flex-col gap-4 p-12 h-full min-h-0">
+      <Transition name="warning" mode="out-in">
+        <div
+          v-if="(user.cards?.length ?? 0) > 0 && !user.battleCard"
+          class="flex items-start gap-2 p-4 font-sans text-orange-900 border-4 border-double border-card-border bg-orange-100"
+          style="
+            background-image:
+              linear-gradient(#f2dcc4 1px, transparent 1px),
+              linear-gradient(90deg, #f2dcc4 1px, transparent 1px);
+            background-size: 32px 32px;
+          "
+        >
+          <Icon name="pixelarticons:alert" class="shrink-0 mt-0.5 text-xl" />
+          <span
+            >You have no battle card set. Future matches will use a randomly
+            selected card from your collection. Consider setting one to make
+            sure your strongest card always fights for you.</span
+          >
+        </div>
+      </Transition>
+
       <div
-        class="flex flex-wrap justify-center gap-8 p-8 h-full border-4 border-double border-card-border bg-slate-200"
+        class="overflow-hidden flex flex-col flex-1 min-h-0 p-8 border-4 border-double border-card-border bg-slate-200"
         style="
           background-image:
             linear-gradient(#cbd5e1 1px, transparent 1px),
@@ -34,7 +54,7 @@
 
         <div
           v-else-if="user.cards?.length === 0"
-          class="overflow-y-auto flex flex-col justify-center items-center text-center gap-4 w-full h-full"
+          class="flex flex-col justify-center items-center text-center gap-4 w-full h-full"
         >
           <Icon
             name="pixelarticons:mood-sad"
@@ -46,99 +66,105 @@
         </div>
 
         <template v-else>
-          <UiFormInputSimple
-            v-model="cardSearch"
-            placeholder="Search for a card..."
-            class="w-1/2 font-sans"
-          />
+          <div class="flex-1 flex flex-col items-center gap-6 w-full min-h-0">
+            <UiFormInputSimple
+              v-model="cardSearch"
+              placeholder="Search for a card..."
+              class="w-1/2 font-sans"
+            />
 
-          <div class="flex flex-wrap justify-center w-full h-full gap-12">
-            <UiCardSimple
-              v-for="card in filteredCards"
-              class="group/card relative flex flex-col w-[28rem] h-[34rem]"
-            >
-              <button
-                title="Set as battle card"
-                class="group/battle-card-button absolute top-4 right-4 flex justify-center items-center p-0 w-10 h-10 border-4 border-double transition-all duration-150 active:scale-90 group-hover/card:opacity-100"
-                :class="
-                  card.reference_id === user.battleCard
-                    ? 'border-primary-border bg-primary hover:bg-primary-hover'
-                    : 'border-secondary-border bg-secondary hover:bg-secondary-hover opacity-0'
-                "
-                @click="setBattleCard(card.reference_id)"
-              >
-                <Icon
-                  name="pixelarticons:trophy"
-                  class="w-5 h-5 transition-all duration-150"
-                  :class="
-                    card.reference_id === user.battleCard
-                      ? 'text-primary-foreground group-hover/battle-card-button:text-primary-hover-foreground'
-                      : 'text-secondary-foreground group-hover/battle-card-button:text-secondary-hover-foreground'
-                  "
-                />
-              </button>
-
-              <div
-                class="flex-1 flex justify-center items-center p-8 w-full min-h-48 bg-slate-300"
-              >
-                <img :src="card.defaultSprite" class="max-h-40" />
-              </div>
-
-              <div
-                class="flex flex-col items-center text-center w-full h-full min-h-0"
-              >
-                <div
-                  class="p-2 text-center w-full border-t-2 border-card-border"
-                  :style="{
-                    'background-color': card.rarity.plateColor,
-                  }"
-                >
-                  <h2 class="text-xl font-bold uppercase">
-                    {{ card.rarity.name }}
-                  </h2>
-                </div>
-
-                <div
-                  class="flex flex-col items-center p-2 w-full border-y-2 border-card-border bg-slate-200"
-                >
-                  <h3 class="text-2xl font-bold">{{ card.name }}</h3>
-                  <h3 class="text-lg font-semibold uppercase">
-                    {{ card.nickname }}
-                  </h3>
-                </div>
-
-                <div
-                  class="flex-1 flex flex-col justify-between w-full min-h-0 p-1"
-                >
-                  <p
-                    class="overflow-y-auto flex-1 p-2 min-h-0 ring-4 ring-card-ring"
+            <div class="flex-1 w-full min-h-0">
+              <div class="h-full overflow-y-auto p-6">
+                <div class="flex flex-wrap justify-center gap-12 w-full">
+                  <UiCardSimple
+                    v-for="card in filteredCards"
+                    class="group/card relative flex flex-col w-[28rem] h-[30rem]"
                   >
-                    {{ card.description }}
-                  </p>
-
-                  <div
-                    class="flex justify-between items-center px-4 py-2 text-xl font-medium border-t-4 border-card-ring bg-slate-200"
-                  >
-                    <span class="flex items-center gap-2 text-red-600">
-                      <Icon name="pixelarticons:heart" />
-                      {{ card.health }} HP
-                    </span>
-
-                    <span
-                      v-if="card.obtained_at"
-                      class="text-sm text-slate-500"
+                    <button
+                      title="Set as battle card"
+                      class="group/battle-card-button absolute top-4 right-4 flex justify-center items-center p-0 w-10 h-10 border-4 border-double transition-all duration-150 active:scale-90 group-hover/card:opacity-100"
+                      :class="
+                        card.reference_id === user.battleCard
+                          ? 'border-primary-border bg-primary hover:bg-primary-hover'
+                          : 'border-secondary-border bg-secondary hover:bg-secondary-hover opacity-0'
+                      "
+                      @click="setBattleCard(card.reference_id)"
                     >
-                      {{ new Date(card.obtained_at).toLocaleString() }}
-                    </span>
+                      <Icon
+                        name="pixelarticons:trophy"
+                        class="w-5 h-5 transition-all duration-150"
+                        :class="
+                          card.reference_id === user.battleCard
+                            ? 'text-primary-foreground group-hover/battle-card-button:text-primary-hover-foreground'
+                            : 'text-secondary-foreground group-hover/battle-card-button:text-secondary-hover-foreground'
+                        "
+                      />
+                    </button>
 
-                    <span class="flex items-center gap-2 text-blue-600">
-                      <Icon name="pixelarticons:shield" />
-                      {{ card.defense }} DEF
-                    </span>
-                  </div>
+                    <div
+                      class="flex-1 flex justify-center items-center p-8 w-full bg-slate-300"
+                    >
+                      <img :src="card.defaultSprite" class="h-24" />
+                    </div>
+
+                    <div
+                      class="flex flex-col items-center text-center w-full h-full min-h-0"
+                    >
+                      <div
+                        class="p-2 text-center w-full border-t-2 border-card-border"
+                        :style="{
+                          'background-color': card.rarity.plateColor,
+                        }"
+                      >
+                        <h2 class="text-xl font-bold uppercase">
+                          {{ card.rarity.name }}
+                        </h2>
+                      </div>
+
+                      <div
+                        class="flex flex-col items-center p-2 w-full border-y-2 border-card-border bg-slate-200"
+                      >
+                        <h3 class="text-2xl font-bold">{{ card.name }}</h3>
+                        <h3 class="text-lg font-semibold uppercase">
+                          {{ card.nickname }}
+                        </h3>
+                      </div>
+
+                      <div
+                        class="flex-1 flex flex-col justify-between w-full min-h-0 p-1"
+                      >
+                        <p
+                          class="overflow-y-auto flex-1 p-2 min-h-0 ring-4 ring-card-ring"
+                        >
+                          {{ card.description }}
+                        </p>
+
+                        <div
+                          class="flex justify-between items-center gap-2 px-4 py-2 text-xl font-medium border-t-4 border-card-ring bg-slate-200"
+                        >
+                          <span class="flex items-center gap-2 text-red-600">
+                            <Icon name="pixelarticons:heart" />
+                            <span>{{ card.health }} HP</span>
+                          </span>
+
+                          <span
+                            v-if="card.obtained_at"
+                            class="text-sm text-slate-500"
+                          >
+                            {{ new Date(card.obtained_at).toLocaleString() }}
+                          </span>
+
+                          <span class="flex items-center gap-2 text-blue-600">
+                            <Icon name="pixelarticons:shield" />
+                            <span>{{ card.defense }} DEF</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </UiCardSimple>
                 </div>
               </div>
-            </UiCardSimple>
+            </div>
           </div>
         </template>
       </div>
@@ -240,6 +266,25 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.warning-enter-active,
+.warning-leave-active {
+  transition: all 0.4s ease;
+}
+
+.warning-enter-from,
+.warning-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+  filter: blur(10px);
+}
+
+.warning-enter-to,
+.warning-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
 .dots::after {
   content: "";
   animation: dots 1s infinite;

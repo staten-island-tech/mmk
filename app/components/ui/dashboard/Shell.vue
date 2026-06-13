@@ -31,7 +31,7 @@
       </div>
     </header>
 
-    <main class="relative flex-1 overflow-hidden">
+    <main class="overflow-hidden relative flex-1 min-h-0">
       <slot />
     </main>
 
