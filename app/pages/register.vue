@@ -53,7 +53,11 @@
               v-model="confirmPassword"
             />
 
-            <UiButtonSimplePrimary label="Register" type="submit" />
+            <UiButtonSimplePrimary
+              label="Register"
+              type="submit"
+              :disabled="isSubmitting"
+            />
 
             <div class="flex justify-between">
               <UiFormPageLink to="/login"
@@ -72,13 +76,16 @@
 import type { DialogButton } from "~/types/dialog";
 import type { InputValidationRule } from "~/types/validation";
 
-const config = useRuntimeConfig();
-const supabase = useSupabaseClient();
-const { usernameRules, passwordRules } = useAuthStore();
-
 definePageMeta({
   middleware: "public-only",
 });
+
+const config = useRuntimeConfig();
+const supabase = useSupabaseClient();
+
+const { usernameRules, passwordRules } = useAuthStore();
+
+const isSubmitting = ref(false);
 
 const dialogOpen = ref<boolean>(false);
 const dialogTitle = ref<string>("");
@@ -114,6 +121,9 @@ async function register() {
   passwordInput.value?.validate();
   confirmPasswordInput.value?.validate();
 
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
+
   try {
     await $fetch("/api/auth/register", {
       method: "POST",
@@ -123,26 +133,28 @@ async function register() {
         confirmPassword: confirmPassword.value,
       },
     });
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: `${username.value}@${config.public.authEmailDomain}`,
+      password: password.value,
+    });
+
+    if (error) {
+      dialogTitle.value = "Error Signing Up";
+      dialogMessage.value = error.toString();
+      dialogOpen.value = true;
+      return;
+    }
+
+    await navigateTo("/onboarding");
   } catch (e: any) {
     dialogTitle.value = "Error Signing Up";
     dialogMessage.value = e.statusMessage;
     dialogOpen.value = true;
     return;
+  } finally {
+    isSubmitting.value = false;
   }
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email: `${username.value}@${config.public.authEmailDomain}`,
-    password: password.value,
-  });
-
-  if (error) {
-    dialogTitle.value = "Error Signing Up";
-    dialogMessage.value = error.toString();
-    dialogOpen.value = true;
-    return;
-  }
-
-  await navigateTo("/onboarding");
 }
 </script>
 

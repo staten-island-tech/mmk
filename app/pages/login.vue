@@ -12,7 +12,9 @@
         {{ dialogMessage }}
       </UiModalSimple>
 
-      <div class="flex w-full min-h-screen sm:items-center justify-center sm:p-10">
+      <div
+        class="flex w-full min-h-screen sm:items-center justify-center sm:p-10"
+      >
         <UiCardSimple
           class="w-full h-screen sm:h-auto max-w-full sm:max-w-lg p-10 gap-5"
         >
@@ -37,7 +39,11 @@
               v-model="password"
             />
 
-            <UiButtonSimplePrimary label="Log In" type="submit" />
+            <UiButtonSimplePrimary
+              label="Log In"
+              type="submit"
+              :disabled="isSubmitting"
+            />
 
             <div class="flex justify-between">
               <UiFormPageLink to="/register">New here? Register</UiFormPageLink>
@@ -53,12 +59,14 @@
 <script setup lang="ts">
 import type { DialogButton } from "~/types/dialog";
 
-const config = useRuntimeConfig();
-const supabase = useSupabaseClient();
-
 definePageMeta({
   middleware: "public-only",
 });
+
+const config = useRuntimeConfig();
+const supabase = useSupabaseClient();
+
+const isSubmitting = ref(false);
 
 const dialogOpen = ref<boolean>(false);
 const dialogTitle = ref<string>("");
@@ -83,19 +91,26 @@ const accountId = computed<string>(
 );
 
 async function signIn() {
-  const { error } = await supabase.auth.signInWithPassword({
-    email: accountId.value,
-    password: password.value,
-  });
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
 
-  if (error) {
-    dialogTitle.value = "Error Signing In";
-    dialogMessage.value = error.toString();
-    dialogOpen.value = true;
-    return;
+  try {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: accountId.value,
+      password: password.value,
+    });
+
+    if (error) {
+      dialogTitle.value = "Error Signing In";
+      dialogMessage.value = error.toString();
+      dialogOpen.value = true;
+      return;
+    }
+
+    await navigateTo("/");
+  } finally {
+    isSubmitting.value = false;
   }
-
-  await navigateTo("/");
 }
 </script>
 
