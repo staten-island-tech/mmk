@@ -158,7 +158,9 @@ CREATE TABLE IF NOT EXISTS "public"."matches" (
     "status" "text" DEFAULT 'waiting'::"text" NOT NULL,
     "player1_card_id" bigint NOT NULL,
     "player2_card_id" bigint NOT NULL,
-    "rewarded" boolean DEFAULT false NOT NULL
+    "rewarded" boolean DEFAULT false NOT NULL,
+    "player1_finalized" boolean DEFAULT false NOT NULL,
+    "player2_finalized" boolean DEFAULT false NOT NULL
 );
 
 
@@ -190,6 +192,14 @@ COMMENT ON COLUMN "public"."matches"."player2_card_id" IS 'The ID of Player 2''s
 
 
 COMMENT ON COLUMN "public"."matches"."rewarded" IS 'Whether or not the winner has been rewarded.';
+
+
+
+COMMENT ON COLUMN "public"."matches"."player1_finalized" IS 'Whether or not Player 1 completed the finalization.';
+
+
+
+COMMENT ON COLUMN "public"."matches"."player2_finalized" IS 'Whether or not Player 2 completed the finalization.';
 
 
 

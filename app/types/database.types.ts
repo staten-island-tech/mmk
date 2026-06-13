@@ -56,8 +56,10 @@ export type Database = {
           game_state: Json | null;
           id: string;
           player1_card_id: number;
+          player1_finalized: boolean;
           player1_uid: string;
           player2_card_id: number;
+          player2_finalized: boolean;
           player2_uid: string;
           rewarded: boolean;
           status: string;
@@ -69,8 +71,10 @@ export type Database = {
           game_state?: Json | null;
           id?: string;
           player1_card_id: number;
+          player1_finalized?: boolean;
           player1_uid: string;
           player2_card_id: number;
+          player2_finalized?: boolean;
           player2_uid: string;
           rewarded?: boolean;
           status?: string;
@@ -82,8 +86,10 @@ export type Database = {
           game_state?: Json | null;
           id?: string;
           player1_card_id?: number;
+          player1_finalized?: boolean;
           player1_uid?: string;
           player2_card_id?: number;
+          player2_finalized?: boolean;
           player2_uid?: string;
           rewarded?: boolean;
           status?: string;

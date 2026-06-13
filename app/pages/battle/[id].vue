@@ -331,7 +331,6 @@
 </template>
 
 <script setup lang="ts">
-import type { Database } from "~/types/database.types";
 import type { Card, CardMove } from "~/types/collection";
 import type {
   BattleState,
@@ -340,9 +339,9 @@ import type {
   DialogueLine,
 } from "~/types/game";
 
-const supabase = useSupabaseClient<Database>();
 const config = useRuntimeConfig();
-const user = useSupabaseUser();
+const user = useUserStore();
+
 const route = useRoute();
 const matchId = route.params.id as string;
 
@@ -394,6 +393,8 @@ const currentMoves = computed<CardMove[]>(() => {
 const currentPlayerState = computed<PlayerState>(() => {
   return currentPlayer.value === 1 ? p1State.value! : p2State.value!;
 });
+
+let finalized = false;
 
 const battle = useBattleEngine(
   p1State,
@@ -523,14 +524,14 @@ function resolveAudioSrc(): string | null {
 }
 
 function handleUnload() {
-  if (!user.value?.sub || !matchId) return;
+  if (!user.data?.sub || !matchId) return;
 
   navigator.sendBeacon(
     "/api/battle/leave",
     new Blob(
       [
         JSON.stringify({
-          uid: user.value.sub,
+          uid: user.data?.sub,
           matchId: matchId,
         }),
       ],
@@ -539,9 +540,25 @@ function handleUnload() {
   );
 }
 
+watch(
+  () => battleState.value,
+  async (state) => {
+    if (state !== "finished") return;
+    if (finalized) return;
+    finalized = true;
+
+    await $fetch("/api/battle/finalize", {
+      method: "POST",
+      body: { matchId },
+    });
+
+    user.fetchStats(true);
+  },
+);
+
 onMounted(async () => {
   try {
-    if (!user.value) {
+    if (!user.data)
       await new Promise<void>((resolve) => {
         const stop = watch(user, (val) => {
           if (val) {
@@ -550,12 +567,11 @@ onMounted(async () => {
           }
         });
       });
-    }
 
-    const userId = user.value?.sub;
+    const userId = user.data?.sub;
     if (!userId) throw new Error("You must be logged in to play.");
 
-    const { data: matchData, error } = await supabase
+    const { data: matchData, error } = await user.supabase
       .from("matches")
       .select("*")
       .eq("id", matchId)
@@ -569,7 +585,7 @@ onMounted(async () => {
       multiplayer.myPlayerNumber.value = 2;
     else throw new Error("You are not part of this match.");
 
-    const { data: users } = await supabase.rpc("get_user_display_names", {
+    const { data: users } = await user.supabase.rpc("get_user_display_names", {
       user_ids: [matchData.player1_uid, matchData.player2_uid],
     });
 
@@ -624,7 +640,7 @@ onMounted(async () => {
       (!matchData.game_state || !(matchData.game_state as any).initialized)
     ) {
       const pollInterval = setInterval(async () => {
-        const { data: updatedMatch } = await supabase
+        const { data: updatedMatch } = await user.supabase
           .from("matches")
           .select("game_state")
           .eq("id", matchId)
