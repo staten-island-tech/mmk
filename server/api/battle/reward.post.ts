@@ -4,7 +4,6 @@ import {
   serverSupabaseUser,
 } from "#supabase/server";
 import type { Database } from "~/types/database.types";
-import type { Card } from "~/types/collection";
 
 const RewardClaimSchema = z.object({
   matchId: z.uuid(),

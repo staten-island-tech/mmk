@@ -73,9 +73,6 @@
 </template>
 
 <script setup lang="ts">
-import type { DialogButton } from "~/types/dialog";
-import type { InputValidationRule } from "~/types/validation";
-
 definePageMeta({
   middleware: "public-only",
 });

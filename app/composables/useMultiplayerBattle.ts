@@ -1,7 +1,4 @@
 import type { Database } from "~/types/database.types";
-import type { Card, CardMove } from "~/types/collection";
-import type { SyncedGameState } from "~/types/game";
-
 export function useMultiplayerBattle(
   matchId: string,
   battle: ReturnType<typeof useBattleEngine>,

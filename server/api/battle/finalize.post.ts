@@ -12,15 +12,14 @@ const FinalizationSchema = z.object({
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
 
-  const parsed = FinalizationSchema.safeParse(body);
-  if (!parsed.success) {
+  const bodyParsed = FinalizationSchema.safeParse(body);
+  if (!bodyParsed.success)
     throw createError({
       statusCode: 400,
-      statusMessage: parsed.error.issues[0]!.message,
+      statusMessage: bodyParsed.error.issues[0]!.message,
     });
-  }
 
-  const { matchId } = parsed.data;
+  const { matchId } = bodyParsed.data;
 
   const user = await serverSupabaseUser(event);
   if (!user)

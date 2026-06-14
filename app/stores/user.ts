@@ -1,6 +1,4 @@
 import type { Database } from "~/types/database.types";
-import type { Card } from "~/types/collection";
-import type { UserCard } from "~/types/user";
 
 export const useUserStore = defineStore("user", () => {
   const config = useRuntimeConfig();

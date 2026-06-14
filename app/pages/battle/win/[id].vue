@@ -117,9 +117,6 @@
 </template>
 
 <script setup lang="ts">
-import type { Card } from "~/types/collection";
-import type { DialogButton } from "~/types/dialog";
-
 definePageMeta({
   middleware: "authenticated",
 });

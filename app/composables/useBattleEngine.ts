@@ -1,6 +1,3 @@
-import type { Card, CardMove } from "~/types/collection";
-import type { PlayerState, ActiveDomain, BattleState } from "~/types/game";
-
 export function useBattleEngine(
   p1State: Ref<PlayerState | null>,
   p2State: Ref<PlayerState | null>,

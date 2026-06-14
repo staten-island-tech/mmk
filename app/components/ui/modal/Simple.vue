@@ -49,8 +49,6 @@
 </template>
 
 <script setup lang="ts">
-import type { DialogButton } from "~/types/dialog";
-
 const props = withDefaults(
   defineProps<{
     open: boolean;

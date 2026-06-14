@@ -93,9 +93,6 @@
   </UiCardSimple>
 </template>
 <script setup lang="ts">
-import type { Card } from "~/types/collection";
-import type { PlayerState } from "~/types/game";
-
 const props = defineProps<{
   card: Card;
   state: PlayerState;

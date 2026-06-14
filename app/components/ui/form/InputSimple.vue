@@ -26,8 +26,6 @@
 </template>
 
 <script setup lang="ts">
-import type { InputValidationRule } from "~/types/validation";
-
 const props = defineProps<{
   label?: string;
   rules?: readonly InputValidationRule[];

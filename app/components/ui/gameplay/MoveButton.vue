@@ -36,8 +36,6 @@
 </template>
 
 <script setup lang="ts">
-import type { CardMove } from "~/types/collection";
-
 const props = defineProps<{
   move: CardMove;
   cooldownRemaining: number;

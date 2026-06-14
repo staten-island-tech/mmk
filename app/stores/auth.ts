@@ -1,4 +1,3 @@
-import type { InputValidationRule } from "~/types/validation";
 import {
   RegExpMatcher,
   englishDataset,
@@ -10,9 +9,7 @@ const matcher = new RegExpMatcher({
   ...englishRecommendedTransformers,
 });
 
-/**
- * Global variables for authentication.
- */
+/** Global variables for authentication. */
 export const useAuthStore = defineStore("auth", () => {
   /** Rules for username validation. */
   const usernameRules: readonly InputValidationRule[] = [

@@ -173,8 +173,6 @@
 </template>
 
 <script setup lang="ts">
-import type { DialogButton } from "~/types/dialog";
-
 definePageMeta({
   middleware: "authenticated",
 });

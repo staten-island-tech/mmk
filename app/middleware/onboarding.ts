@@ -1,5 +1,3 @@
-import type { UserStats } from "~/types/user";
-
 /** Redirects away from onboarding page if the user is already onboarded. */
 export default defineNuxtRouteMiddleware(async () => {
   const supabase = useSupabaseClient();

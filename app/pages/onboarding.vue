@@ -146,8 +146,6 @@
 </template>
 
 <script setup lang="ts">
-import type { Card } from "~/types/collection";
-
 definePageMeta({
   middleware: "onboarding",
 });

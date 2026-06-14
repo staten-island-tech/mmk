@@ -3,7 +3,6 @@ import {
   serverSupabaseUser,
 } from "#supabase/server";
 import type { Database } from "~/types/database.types";
-import type { Card } from "~/types/collection";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);

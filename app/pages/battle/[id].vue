@@ -331,14 +331,6 @@
 </template>
 
 <script setup lang="ts">
-import type { Card, CardMove } from "~/types/collection";
-import type {
-  BattleState,
-  PlayerState,
-  ActiveDomain,
-  DialogueLine,
-} from "~/types/game";
-
 const config = useRuntimeConfig();
 const user = useUserStore();
 
@@ -385,7 +377,7 @@ const domainComponentMap: Record<string, any> = {
   DomainsEntropy: resolveComponent("DomainsEntropy"),
 };
 
-const currentMoves = computed<CardMove[]>(() => {
+const currentMoves = computed<readonly CardMove[]>(() => {
   if (!p1Card.value || !p2Card.value) return [];
   return currentPlayer.value === 1 ? p1Card.value.moves : p2Card.value.moves;
 });
