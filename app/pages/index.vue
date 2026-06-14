@@ -38,7 +38,6 @@ const message = computed<string>(() => {
 
 async function cardAction(action: string) {
   switch (action) {
-    // TODO: Add all cases here
     case "play":
       await navigateTo("/queue");
       break;
@@ -48,8 +47,6 @@ async function cardAction(action: string) {
     case "logout":
       await user.supabase.auth.signOut();
       await navigateTo("/login");
-      break;
-    case "settings":
       break;
   }
 }
@@ -72,15 +69,6 @@ const cards = [
     accentColor: colors.red[400],
     shader: 1,
     icon: "pixelarticons:briefcase-search",
-  },
-  {
-    action: "settings",
-    title: "Settings",
-    subtitle: "Change your settings",
-    buttonLabel: "Configure",
-    accentColor: colors.purple[400],
-    shader: 2,
-    icon: "pixelarticons:sliders",
   },
   {
     action: "logout",

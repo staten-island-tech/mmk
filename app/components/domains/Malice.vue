@@ -1,14 +1,23 @@
 <template>
   <canvas
-    ref="canvas"
-    class="pointer-events-none fixed top-0 left-0 w-full h-full bg-black"
+    ref="canvasRef"
+    class="pointer-events-none z-30 fixed top-0 left-0 w-full h-full"
   ></canvas>
 </template>
 
 <script lang="ts" setup>
-const canvas = ref<HTMLCanvasElement | null>(null);
+defineExpose({
+  THEME_BACKGROUND: "#1a0000",
+  THEME_BACKGROUND_GRID: "#3d0a0a",
+  THEME_GROUND: "#2a0505",
+  THEME_GROUND_GRID: "#4a1010",
+});
+
+const canvasRef = ref<HTMLCanvasElement | null>(null);
 
 let ctx: CanvasRenderingContext2D | null = null;
+let offscreen: HTMLCanvasElement | null = null;
+let offCtx: CanvasRenderingContext2D | null = null;
 let animationFrameId: number | null = null;
 
 let slashes: Slash[] = [];
@@ -31,10 +40,10 @@ class Slash {
     this.message = Math.random() < 0.1 ? "HOS" : null;
     this.angle = Math.random() * Math.PI * 2;
 
-    this.length = intense ? Math.random() * 300 + 70 : Math.random() * 125 + 30;
-    this.life = intense ? Math.random() * 20 + 15 : Math.random() * 40 + 30;
+    this.length = intense ? Math.random() * 300 + 70 : Math.random() * 500 + 30;
+    this.life = intense ? Math.random() * 20 + 15 : Math.random() * 20 + 10;
     this.thickness = intense ? Math.random() * 5 + 4 : Math.random() * 2 + 1;
-    this.speed = intense ? Math.random() * 12 + 4 : Math.random() * 8 + 2.5;
+    this.speed = intense ? Math.random() * 2 + 4 : Math.random() * 8 + 2.5;
     this.jitter = Math.random() * 30;
   }
 
@@ -128,86 +137,91 @@ class Splatter {
 }
 
 function resizeCanvas() {
-  if (!canvas.value) return;
-  canvas.value.width = window.innerWidth;
-  canvas.value.height = window.innerHeight;
+  if (!canvasRef.value || !offscreen) return;
+  canvasRef.value.width = canvasRef.value.clientWidth;
+  canvasRef.value.height = canvasRef.value.clientHeight;
+  offscreen.width = canvasRef.value.width;
+  offscreen.height = canvasRef.value.height;
 }
 
 function spawnSlashes(count: number, intense = false) {
-  if (!canvas.value) return;
+  if (!canvasRef.value) return;
   for (let i = 0; i < count; i++) {
-    slashes.push(new Slash(canvas.value.width, canvas.value.height, intense));
+    slashes.push(
+      new Slash(canvasRef.value.width, canvasRef.value.height, intense),
+    );
   }
 }
 
 function spawnSplatter(count: number) {
-  if (!canvas.value) return;
+  if (!canvasRef.value) return;
   for (let i = 0; i < count; i++) {
-    splatters.push(new Splatter(canvas.value.width, canvas.value.height));
+    splatters.push(new Splatter(canvasRef.value.width, canvasRef.value.height));
   }
 }
 
 function animate() {
-  if (!ctx || !canvas.value) return;
+  if (!ctx || !offCtx || !canvasRef.value || !offscreen) return;
 
-  const { width, height } = canvas.value;
+  const { width, height } = canvasRef.value;
 
-  ctx.fillStyle = "rgba(0, 0, 0, 0.09)";
-  ctx.fillRect(0, 0, width, height);
+  offCtx.globalCompositeOperation = "destination-out";
+  offCtx.fillStyle = "rgba(0, 0, 0, 0.09)";
+  offCtx.fillRect(0, 0, width, height);
+  offCtx.globalCompositeOperation = "source-over";
 
   const shakeX = (Math.random() - 0.5) * 3.5;
   const shakeY = (Math.random() - 0.5) * 3.5;
 
-  ctx.save();
-  ctx.translate(shakeX, shakeY);
+  offCtx.save();
+  offCtx.translate(shakeX, shakeY);
+  offCtx.globalCompositeOperation = "lighter";
 
-  ctx.globalCompositeOperation = "lighter";
-
-  // Draw slashes
   for (let i = slashes.length - 1; i >= 0; i--) {
     const s = slashes[i];
     if (!s) continue;
-
     s.update();
-    s.draw(ctx!);
-
+    s.draw(offCtx);
     if (s.life <= 0) slashes.splice(i, 1);
   }
 
-  // Draw splatters
   for (let i = splatters.length - 1; i >= 0; i--) {
     const sp = splatters[i];
     if (!sp) continue;
-
     sp.update();
-    sp.draw(ctx!);
-
+    sp.draw(offCtx);
     if (sp.life <= 0) splatters.splice(i, 1);
   }
 
-  ctx.restore();
+  offCtx.restore();
 
-  // Spawn logic
-  if (Math.random() < 0.32) spawnSlashes(7);
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(offscreen, 0, 0);
+
+  if (Math.random() < 0.5) spawnSlashes(2);
   if (Math.random() < 0.085) {
     spawnSlashes(1, true);
-    spawnSplatter(2);
+    spawnSplatter(1);
   }
 
   animationFrameId = requestAnimationFrame(animate);
 }
 
 onMounted(() => {
-  if (!canvas.value) return;
+  if (!canvasRef.value) return;
 
-  ctx = canvas.value.getContext("2d", { alpha: true });
+  ctx = canvasRef.value.getContext("2d", { alpha: true });
   if (!ctx) return;
+
+  offscreen = document.createElement("canvas");
+  offCtx = offscreen.getContext("2d", { alpha: true });
+  if (!offCtx) return;
 
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
 
   spawnSlashes(1);
-  spawnSplatter(2);
+  spawnSplatter(1);
 
   animate();
 });

@@ -6,6 +6,17 @@
         filter: `brightness(${backgroundBrightness})`,
       }"
     />
+
+    <UiModalSimple
+      :open="dialogOpen"
+      :title="dialogTitle"
+      :close-button="false"
+      :buttons="dialogButtons"
+      @close="dialogOpen = false"
+    >
+      {{ dialogMessage }}
+    </UiModalSimple>
+
     <Transition name="slide-fade" mode="out-in">
       <div
         v-if="step >= 0"
@@ -14,56 +25,27 @@
       >
         <template v-if="step === 0">
           <h1>
-            Welcome, {{ user.data?.user_metadata?.display_name ?? "Guest" }}.
+            You did well,
+            {{ user.data?.user_metadata?.display_name ?? "Guest" }}.
           </h1>
         </template>
 
         <template v-else-if="step === 1">
-          <h1>Let's prepare for your first battle.</h1>
+          <h1>Let's see what you've earned.</h1>
         </template>
 
-        <!-- Card draw -->
+        <!-- Card reveal -->
         <template v-else-if="step === 2">
-          <h1>First, let's draw a starter card.</h1>
+          <h1>A new card has been added to your collection!</h1>
           <div class="flex gap-8 mt-4">
             <div
-              v-for="n in 3"
-              :key="n"
-              class="cursor-pointer flex flex-col items-center gap-8"
+              class="flex flex-col items-center gap-8"
               style="perspective: 750px"
-              @click="flipCard(n)"
             >
-              <div
-                class="relative w-72 h-96 transition-all duration-300"
-                :class="{
-                  'hover:[transform:rotateX(10deg)_rotateY(-20deg)_scale(0.95)]':
-                    flippedCard === null,
-                  'cursor-not-allowed select-none brightness-50':
-                    flippedCard && flippedCard !== n,
-                }"
-                :style="{
-                  transformStyle: 'preserve-3d',
-                  transform: flippedCard === n ? 'rotateY(180deg)' : undefined,
-                }"
-                @transitionend="onFlipEnd(n)"
-              >
-                <!-- Back -->
-                <div class="absolute inset-0">
-                  <UiCardSimple
-                    class="flex justify-center items-center w-full h-full"
-                  >
-                    <span class="text-7xl text-slate-400">?</span>
-                  </UiCardSimple>
-                </div>
-
-                <!-- Front -->
+              <div class="relative w-72 h-96 transition-all duration-300">
                 <div
                   class="absolute inset-0 transition-all duration-1000"
                   :class="{ 'blur-md brightness-50': !revealed }"
-                  :style="{
-                    backfaceVisibility: 'hidden',
-                    transform: 'rotateY(180deg)',
-                  }"
                 >
                   <UiCardSimple class="flex flex-col w-full h-full">
                     <!-- Sprite -->
@@ -122,23 +104,12 @@
                   </UiCardSimple>
                 </div>
               </div>
-
-              <UiButtonSimplePrimary
-                label="Accept"
-                class="w-full transition-all duration-300"
-                :class="
-                  flippedCard === n && confirmedCard !== n && revealed
-                    ? 'opacity-100 blur-none'
-                    : 'opacity-0 blur-md pointer-events-none'
-                "
-                @click="confirmCard(n)"
-              />
             </div>
           </div>
         </template>
 
         <template v-else-if="step === 3">
-          <h1>Great draw. Let your journey begin.</h1>
+          <h1>Your journey continues.</h1>
         </template>
       </div>
     </Transition>
@@ -147,77 +118,89 @@
 
 <script setup lang="ts">
 definePageMeta({
-  middleware: "onboarding",
+  middleware: "authenticated",
 });
 
+const dialogOpen = ref<boolean>(false);
+const dialogTitle = ref<string>("");
+const dialogMessage = ref<string>("");
+const dialogButtons = ref<DialogButton[]>([
+  {
+    label: "OK",
+    priority: 1,
+    callback: () => (dialogOpen.value = false),
+  },
+]);
+
 const user = useUserStore();
+const route = useRoute();
+const matchId = route.params.id as string;
 
 const backgroundBrightness = ref<number>(1);
 const step = ref<number>(-1);
 
-// Starter card selection step
+// Card reveal step
 const card = ref<Card | null>(null);
-const flippedCard = ref<number | null>(null);
-const confirmedCard = ref<number | null>(null);
-const revealed = ref(false);
-
-const advanceStep = ref<(() => void) | null>(null);
+const revealed = ref<boolean>(false);
 
 const steps: {
   duration?: number;
-  onDemand?: boolean;
   callback?: () => any | Promise<any>;
 }[] = [
   { duration: 3000, callback: () => (backgroundBrightness.value = 0.6) },
-  { duration: 5000 },
+  { duration: 4000 },
   {
-    onDemand: true,
+    duration: 10000,
     callback: async () => {
-      await fetchRandomCard();
+      revealed.value = false;
       backgroundBrightness.value = 0.4;
+
+      await nextTick();
+
+      setTimeout(() => (revealed.value = true), 500);
     },
   },
-  { duration: 5000 },
+  { duration: 4000 },
 ];
 
-async function fetchRandomCard() {
-  const { data: drawnCard } = await $fetch<{ data: Card }>(
-    "/api/onboarding/draw",
-    {
-      method: "POST",
-    },
-  );
-
-  card.value = drawnCard;
-}
-
-function flipCard(n: number) {
-  if (confirmedCard.value !== null) return;
-  if (flippedCard.value !== null) return;
-  flippedCard.value = n;
-}
-
-function onFlipEnd(n: number) {
-  if (flippedCard.value === n) revealed.value = true;
-}
-
-async function confirmCard(n: number) {
-  confirmedCard.value = n;
-  advanceStep.value?.();
-}
-
 onMounted(async () => {
-  for (const [i, { duration, callback, onDemand }] of steps.entries()) {
-    step.value = i;
-    if (callback) await callback();
-    if (onDemand) {
-      await new Promise<void>((resolve) => (advanceStep.value = resolve));
-      advanceStep.value = null;
-    } else await new Promise((resolve) => setTimeout(resolve, duration));
-  }
+  try {
+    const result = await $fetch<{
+      // fetch reward first
+      success?: boolean;
+      card?: Card;
+      alreadyRewarded?: boolean;
+    }>("/api/battle/reward", {
+      method: "POST",
+      body: { matchId },
+    });
 
-  await $fetch("/api/onboarding/complete", { method: "POST" });
-  navigateTo("/");
+    if (result.alreadyRewarded) throw Error("Already rewarded for this match.");
+
+    if (result.success && result.card) card.value = result.card;
+
+    user.fetchStats(true); // force refresh
+
+    for (const [i, { duration, callback }] of steps.entries()) {
+      step.value = i;
+      if (callback) await callback();
+      await new Promise((resolve) => setTimeout(resolve, duration));
+    }
+
+    navigateTo("/");
+  } catch (e: any) {
+    dialogTitle.value = "Error Claiming Reward";
+    dialogMessage.value =
+      e?.data?.statusMessage || e?.message || "Something went wrong.";
+    dialogButtons.value = [
+      {
+        label: "Return",
+        priority: 1,
+        callback: () => navigateTo("/"),
+      },
+    ];
+    dialogOpen.value = true;
+  }
 });
 </script>
 

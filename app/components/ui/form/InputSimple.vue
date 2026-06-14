@@ -1,8 +1,8 @@
 <template>
   <div class="flex flex-col gap-2">
-    <label class="text-input-label">{{ props.label }}</label>
+    <label v-if="props.label" class="text-input-label">{{ props.label }}</label>
     <input
-      class="p-2 outline-none border-4 border-double border-input-border bg-input text-md text-input-foreground transition-all duration-150 focus:border-input-focus-border focus:bg-input-focus focus:text-input-focus-foreground focus:placeholder:text-input-focus-placeholder placeholder:text-input-placeholder"
+      class="p-2 w-full outline-none border-4 border-double border-input-border bg-input text-md text-input-foreground transition-all duration-150 focus:border-input-focus-border focus:bg-input-focus focus:text-input-focus-foreground focus:placeholder:text-input-focus-placeholder placeholder:text-input-placeholder"
       v-bind="$attrs"
       v-model="model"
       @blur="touched = true"
@@ -26,10 +26,8 @@
 </template>
 
 <script setup lang="ts">
-import type { InputValidationRule } from "~/types/validation";
-
 const props = defineProps<{
-  label: string;
+  label?: string;
   rules?: readonly InputValidationRule[];
 }>();
 

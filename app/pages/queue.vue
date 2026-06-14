@@ -40,8 +40,6 @@
 </template>
 
 <script setup lang="ts">
-import type { DialogButton } from "~/types/dialog";
-
 definePageMeta({
   middleware: "authenticated",
 });
@@ -105,29 +103,34 @@ async function joinQueue() {
    * If so, leave the queue without deleting the row and navigate to the game.
    * This is all done before adding the user to the queue to avoid getting matched before listening.
    */
-  channel
-    .on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: "matchmaking_queue",
-        filter: `uid=eq.${user.data?.sub}`,
-      },
-      (payload: any) => {
-        // Enter match
-        if (payload.new.status === "matched") {
-          leaveQueue(false);
-          navigateTo(`/game/${payload.new.match_id}`);
+  // Wait for the subscription to be fully established before joining
+  await new Promise<void>((resolve, reject) => {
+    channel!
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "matchmaking_queue",
+          filter: `uid=eq.${user.data?.sub}`,
+        },
+        (payload: any) => {
+          if (payload.new.status === "matched") {
+            leaveQueue(false);
+            navigateTo(`/battle/${payload.new.match_id}`);
+          }
+        },
+      )
+      .subscribe((status: string) => {
+        if (status === "SUBSCRIBED") resolve();
+        else if (status === "CHANNEL_ERROR") {
+          reject(new Error("Channel error"));
+          showQueueError(
+            "Failed to connect to matchmaking. If you're using an ad blocker or privacy tool, try disabling it; MMK's servers may be flagged as suspicious. MMK does not serve ads or track users.",
+          );
         }
-      },
-    )
-    .subscribe((status: string) => {
-      if (status === "CHANNEL_ERROR")
-        showQueueError(
-          "Failed to connect to matchmaking. If you're using an ad blocker or privacy tool, try disabling it; MMK's servers may be flagged as suspicious. MMK does not serve ads or track users.",
-        );
-    });
+      });
+  });
 
   // Send heartbeat
   const { error: heartbeatError } = await user.supabase

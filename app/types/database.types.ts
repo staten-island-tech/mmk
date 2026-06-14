@@ -34,30 +34,66 @@ export type Database = {
   };
   public: {
     Tables: {
+      battle_heartbeats: {
+        Row: {
+          last_heartbeat: string;
+          uid: string;
+        };
+        Insert: {
+          last_heartbeat?: string;
+          uid?: string;
+        };
+        Update: {
+          last_heartbeat?: string;
+          uid?: string;
+        };
+        Relationships: [];
+      };
       matches: {
         Row: {
           created_at: string;
           current_turn: string | null;
+          game_state: Json | null;
           id: string;
+          player1_card_id: number;
+          player1_finalized: boolean;
           player1_uid: string;
+          player2_card_id: number;
+          player2_finalized: boolean;
           player2_uid: string;
+          rewarded: boolean;
           status: string;
+          winner: string | null;
         };
         Insert: {
           created_at?: string;
           current_turn?: string | null;
+          game_state?: Json | null;
           id?: string;
+          player1_card_id: number;
+          player1_finalized?: boolean;
           player1_uid: string;
+          player2_card_id: number;
+          player2_finalized?: boolean;
           player2_uid: string;
+          rewarded?: boolean;
           status?: string;
+          winner?: string | null;
         };
         Update: {
           created_at?: string;
           current_turn?: string | null;
+          game_state?: Json | null;
           id?: string;
+          player1_card_id?: number;
+          player1_finalized?: boolean;
           player1_uid?: string;
+          player2_card_id?: number;
+          player2_finalized?: boolean;
           player2_uid?: string;
+          rewarded?: boolean;
           status?: string;
+          winner?: string | null;
         };
         Relationships: [];
       };
@@ -131,6 +167,7 @@ export type Database = {
       };
       user_stats: {
         Row: {
+          battle_card: string | null;
           draft: number | null;
           games: number;
           onboarded: boolean;
@@ -138,6 +175,7 @@ export type Database = {
           wins: number;
         };
         Insert: {
+          battle_card?: string | null;
           draft?: number | null;
           games?: number;
           onboarded?: boolean;
@@ -145,19 +183,35 @@ export type Database = {
           wins?: number;
         };
         Update: {
+          battle_card?: string | null;
           draft?: number | null;
           games?: number;
           onboarded?: boolean;
           uid?: string;
           wins?: number;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "user_stats_battle_card_fkey";
+            columns: ["battle_card"];
+            isOneToOne: false;
+            referencedRelation: "user_cards";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
+      get_user_display_names: {
+        Args: { user_ids: string[] };
+        Returns: {
+          display_name: string;
+          id: string;
+        }[];
+      };
       release_matchmaking_lock: { Args: never; Returns: undefined };
       try_matchmaking_lock: { Args: never; Returns: boolean };
     };

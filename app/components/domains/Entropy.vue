@@ -5,8 +5,12 @@
 </template>
 
 <script setup lang="ts">
-const canvasRef = ref<HTMLCanvasElement | null>(null);
-const shaderStore = useShaderStore();
+defineExpose({
+  THEME_BACKGROUND: "transparent",
+  THEME_BACKGROUND_GRID: "#1c234780",
+  THEME_GROUND: "#080d2880",
+  THEME_GROUND_GRID: "#4f598950",
+});
 
 const vsSource = `
 attribute vec2 a_position;
@@ -25,217 +29,127 @@ float hash(float n) {
   return fract(sin(n) * 43758.5453123);
 }
 
-float hash2(vec2 p) {
-  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+float noise(vec2 p) {
+  return hash(p.x * 127.1 + p.y * 311.7);
 }
 
-float star(vec2 uv, float size, float sharpness) {
-  float d = length(uv);
-  float core = smoothstep(size, size * 0.1, d);
-  float spike1 = exp(-abs(uv.x) * sharpness) * exp(-abs(uv.y) * sharpness * 6.0);
-  float spike2 = exp(-abs(uv.y) * sharpness) * exp(-abs(uv.x) * sharpness * 6.0);
-  float spikes = max(spike1, spike2) * smoothstep(size * 4.0, 0.0, d);
-  float halo = exp(-d * sharpness * 0.4) * 0.25;
-  return clamp(core + spikes * 0.6 + halo, 0.0, 1.0);
+float smoothNoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  
+  float a = noise(i);
+  float b = noise(i + vec2(1.0, 0.0));
+  float c = noise(i + vec2(0.0, 1.0));
+  float d = noise(i + vec2(1.0, 1.0));
+  
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+vec2 toroidalDelta(vec2 a, vec2 b) {
+  vec2 d = a - b;
+  d -= floor(d + 0.5);
+  return d;
+}
+
+float particle(vec2 delta, float size) {
+  float d = dot(delta, delta);
+  float core = exp(-d / (size * size * 0.3)) * 1.5;
+  float glow = exp(-d / (size * size * 0.8)) * 0.3;
+  return core + glow;
+}
+
+vec3 particleColor(float h) {
+  return mix(
+    vec3(0.6, 0.75, 1.0),
+    vec3(1.0, 0.85, 0.7),
+    h
+  );
 }
 
 void main() {
   vec2 uv = gl_FragCoord.xy / r;
   vec2 aspect = vec2(r.x / r.y, 1.0);
-
   float time = t;
-
   vec3 color = vec3(0.0);
-
-  {
-    float speed   = 0.55;
-    float count   = 180.0;
-    float sizeBase = 0.003;
-    vec3  tint    = vec3(0.75, 0.88, 1.0);
-
-    for (float i = 0.0; i < 30.0; i++) {
-      float seed  = i * 1.7324;
-      float xSeed = hash(seed);
-      float ySeed = hash(seed + 0.5);
-      float vx    = (hash(seed + 1.1) - 0.3) * speed;
-      float vy    = (hash(seed + 2.2) - 0.5) * speed * 0.25;
-      float phase = hash(seed + 3.3);
-
-      vec2 pos;
-      pos.x = fract(xSeed + vx * time + phase);
-      pos.y = fract(ySeed + vy * time);
-
-      float sz    = sizeBase * (0.4 + hash(seed + 4.4) * 0.9);
-      float sharp = 180.0 / sz;
-
-      vec2 delta  = (uv - pos) * aspect;
-      float b     = star(delta, sz, sharp);
-
-      // Twinkle
-      float twinkle = 0.7 + 0.3 * sin(time * (3.0 + hash(seed + 5.5) * 6.0) + phase * 6.28);
-      color += tint * b * twinkle;
-    }
-  }
-
-  {
-    float speed   = 0.28;
-    float sizeBase = 0.0055;
-    vec3  tint    = vec3(1.0, 0.96, 0.88);
-
-    for (float i = 0.0; i < 30.0; i++) {
-      float seed  = i * 3.1592 + 1000.0;
-      float xSeed = hash(seed);
-      float ySeed = hash(seed + 0.5);
-      float vx    = (hash(seed + 1.1) - 0.25) * speed;
-      float vy    = (hash(seed + 2.2) - 0.5)  * speed * 0.2;
-      float phase = hash(seed + 3.3);
-
-      vec2 pos;
-      pos.x = fract(xSeed + vx * time + phase);
-      pos.y = fract(ySeed + vy * time);
-
-      float sz    = sizeBase * (0.5 + hash(seed + 4.4) * 0.8);
-      float sharp = 160.0 / sz;
-
-      vec2 delta  = (uv - pos) * aspect;
-      float b     = star(delta, sz, sharp);
-
-      float twinkle = 0.65 + 0.35 * sin(time * (2.0 + hash(seed + 5.5) * 4.0) + phase * 6.28);
-      color += tint * b * twinkle;
-    }
-  }
-
-  {
-    float speed   = 0.10;
-    float sizeBase = 0.010;
-    vec3  tint    = vec3(0.9, 0.95, 1.0);
-
-    for (float i = 0.0; i < 40.0; i++) {
-      float seed  = i * 5.7721 + 2000.0;
-      float xSeed = hash(seed);
-      float ySeed = hash(seed + 0.5);
-      float vx    = (hash(seed + 1.1) - 0.2) * speed;
-      float vy    = (hash(seed + 2.2) - 0.5) * speed * 0.15;
-      float phase = hash(seed + 3.3);
-
-      vec2 pos;
-      pos.x = fract(xSeed + vx * time + phase);
-      pos.y = fract(ySeed + vy * time);
-
-      float sz    = sizeBase * (0.6 + hash(seed + 4.4) * 0.7);
-      float sharp = 120.0 / sz;
-
-      vec2 delta  = (uv - pos) * aspect;
-      float b     = star(delta, sz, sharp);
-
-      float twinkle = 0.55 + 0.45 * sin(time * (1.0 + hash(seed + 5.5) * 2.5) + phase * 6.28);
-      color += tint * b * twinkle * 1.3;
-    }
-  }
-
-  {
-    float speed   = 1.4;
-    float sizeBase = 0.0018;
-    vec3  tint    = vec3(0.6, 0.75, 1.0);
-
-    for (float i = 0.0; i < 20.0; i++) {
-      float seed  = i * 2.3456 + 3000.0;
-      float xSeed = hash(seed);
-      float ySeed = hash(seed + 0.5);
-      float vx    = (hash(seed + 1.1) * 0.7 + 0.3) * speed;
-      float vy    = (hash(seed + 2.2) - 0.5) * speed * 0.08;
-      float phase = hash(seed + 3.3);
-
-      vec2 pos;
-      pos.x = fract(xSeed + vx * time + phase);
-      pos.y = fract(ySeed + vy * time);
-
-      vec2 delta = (uv - pos) * aspect;
-      delta.x *= 0.15; // squish x → horizontal streak
-
-      float sz    = sizeBase * (0.5 + hash(seed + 4.4));
-      float sharp = 200.0 / sz;
-      float b     = star(delta, sz, sharp) * 0.7;
-
-      color += tint * b;
-    }
-  }
-
   vec2 centered = uv - 0.5;
-  float vignette = 1.0 - dot(centered, centered) * 1.2;
-  vec3 bg = vec3(0.01, 0.01, 0.025) * vignette;
+  float vignette = 1.0 - dot(centered, centered) * 0.8;
 
-  gl_FragColor = vec4(bg + color, 1.0);
+  vec2 bgUV = uv * 3.0;
+  float n1 = smoothNoise(bgUV * 0.3 + time * 0.02);
+  float n2 = smoothNoise(bgUV * 0.7 - time * 0.015 + 100.0);
+  float n3 = smoothNoise(bgUV * 1.5 + time * 0.01 + 200.0);
+  
+  vec3 deepBlue = vec3(0.05, 0.06, 0.1);
+  vec3 darkPurple = vec3(0.06, 0.05, 0.09);
+  vec3 darkTeal = vec3(0.04, 0.07, 0.085);
+  vec3 midnightBlue = vec3(0.05, 0.055, 0.095);
+  vec3 darkIndigo = vec3(0.055, 0.05, 0.09);
+  
+  vec3 bg = mix(deepBlue, darkPurple, n1 * 0.5);
+  bg = mix(bg, darkTeal, n2 * 0.35);
+  bg = mix(bg, midnightBlue, n3 * 0.3);
+  bg = mix(bg, darkIndigo, n1 * n2 * 0.25);
+  bg *= 0.9 + n3 * 0.2;
+  bg *= vignette;
+
+  for (float i = 0.0; i < 30.0; i++) {
+    float seed = i * 1.73;
+    vec2 basePos = vec2(hash(seed), hash(seed + 1.0));
+    vec2 pos = basePos + time * 0.01;
+    vec2 delta = toroidalDelta(uv, pos) * aspect;
+    float h = hash(seed + 2.0);
+    float size = 0.0015;
+    float b = particle(delta, size);
+    float blink = 0.5 + 0.5 * sin(time * 3.0 + h * 10.0);
+    blink = pow(blink, 2.0) * 0.8 + 0.2;
+    color += particleColor(h) * b * blink;
+  }
+
+  for (float i = 0.0; i < 20.0; i++) {
+    float seed = i * 2.11 + 100.0;
+    vec2 basePos = vec2(hash(seed), hash(seed + 1.0));
+    vec2 pos = basePos + time * 0.015;
+    vec2 delta = toroidalDelta(uv, pos) * aspect;
+    float h = hash(seed + 2.0);
+    float size = 0.0025;
+    float b = particle(delta, size);
+    float blink = 0.5 + 0.5 * sin(time * 2.5 + h * 8.0);
+    blink = pow(blink, 1.5) * 0.7 + 0.3;
+    color += particleColor(h) * b * blink;
+  }
+
+  for (float i = 0.0; i < 12.0; i++) {
+    float seed = i * 3.7 + 500.0;
+    vec2 basePos = vec2(hash(seed), hash(seed + 1.0));
+    vec2 pos = basePos + time * 0.005;
+    vec2 delta = toroidalDelta(uv, pos) * aspect;
+    float h = hash(seed + 2.0);
+    float size = 0.0035;
+    float b = particle(delta, size);
+    float blink = 0.6 + 0.4 * sin(time * 1.5 + h * 6.0);
+    color += particleColor(h) * b * blink * 0.8;
+  }
+
+  for (float i = 0.0; i < 15.0; i++) {
+    float seed = i * 5.0 + 900.0;
+    vec2 basePos = vec2(hash(seed), hash(seed + 1.0));
+    vec2 pos = basePos + time * 0.03;
+    vec2 delta = toroidalDelta(uv, pos) * aspect;
+    float size = 0.0012;
+    float b = particle(delta, size);
+    float blink = 0.4 + 0.6 * sin(time * 4.0 + seed * 5.0);
+    color += vec3(0.7, 0.8, 1.0) * b * blink;
+  }
+
+  color = 1.0 - exp(-color * 1.8);
+  color *= vignette;
+
+  gl_FragColor = vec4(color + bg, 1.0);
 }
 `;
 
-let handleResize: () => void;
-
-function startRenderLoop(canvas: HTMLCanvasElement) {
-  function render() {
-    const { gl, program, timeLocation, resolutionLocation, startTime } =
-      shaderStore;
-    if (!gl || !program || !timeLocation || !resolutionLocation) return;
-
-    const time = (performance.now() - startTime) / 1000;
-    gl.uniform1f(timeLocation, time);
-    gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-    shaderStore.animationFrame = requestAnimationFrame(render);
-  }
-  render();
-}
-
-onMounted(() => {
-  const canvas = canvasRef.value;
-  if (!canvas) return;
-
-  const gl = canvas.getContext("webgl");
-  if (!gl) return;
-  shaderStore.gl = gl;
-
-  const program = shaderStore.createProgram(gl, vsSource, fsSource);
-  if (!program) return;
-  shaderStore.program = program;
-  gl.useProgram(program);
-
-  shaderStore.positionLocation = gl.getAttribLocation(program, "a_position");
-  shaderStore.timeLocation = gl.getUniformLocation(program, "t");
-  shaderStore.resolutionLocation = gl.getUniformLocation(program, "r");
-
-  const vertices = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-  shaderStore.setupVertexBuffer(vertices);
-  gl.enableVertexAttribArray(shaderStore.positionLocation);
-  gl.vertexAttribPointer(
-    shaderStore.positionLocation,
-    2,
-    gl.FLOAT,
-    false,
-    0,
-    0,
-  );
-
-  const resize = () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    gl.viewport(0, 0, canvas.width, canvas.height);
-  };
-  handleResize = resize;
-  resize();
-  window.addEventListener("resize", handleResize);
-
-  shaderStore.startTime = performance.now();
-  startRenderLoop(canvas);
-});
-
-onUnmounted(() => {
-  if (shaderStore.animationFrame)
-    cancelAnimationFrame(shaderStore.animationFrame);
-  if (handleResize) window.removeEventListener("resize", handleResize);
-});
+const { canvasRef } = useWebGLShader({ fsSource, vsSource });
 </script>
 
 <style scoped></style>
