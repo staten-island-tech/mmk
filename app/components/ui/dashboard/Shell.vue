@@ -110,8 +110,8 @@ const props = defineProps<{
   title?: string;
 }>();
 
-onMounted(() => {
-  user.fetchStats();
+onMounted(async () => {
+  await user.fetchStats();
 });
 </script>
 

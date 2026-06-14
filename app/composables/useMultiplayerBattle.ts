@@ -15,7 +15,14 @@ export function useMultiplayerBattle(
   let isRemoteUpdate = false;
 
   let pingInterval: ReturnType<typeof setInterval> | null = null;
+  let reconcileInterval: ReturnType<typeof setInterval> | null = null;
   let watchInterval: ReturnType<typeof setInterval> | null = null;
+
+  const realtimeFailed = ref(false);
+  const reconcileFailed = ref(false);
+  const hasSyncError = computed(
+    () => realtimeFailed.value && reconcileFailed.value,
+  );
 
   const isRemoteTurn = computed(() => {
     if (myPlayerNumber.value === null) return true;
@@ -167,83 +174,189 @@ export function useMultiplayerBattle(
     }
   }
 
+  /**
+   * Reconcile local state with the database.
+   * Like the fallback polling mechanism in the queuing page, this system allows players to hook onto changes even if the realtime subscription drops an event.
+   * This is also a relatively lightweight fallback mechanism used to synchronize the client with changes to the server. It should be called over an interval.
+   */
+  async function reconcileState() {
+    if (!match.value || engineRefs.battleState.value === "finished") return;
+
+    try {
+      const { data: dbMatch } = await supabase
+        .from("matches")
+        .select("game_state, status, winner, current_turn")
+        .eq("id", matchId)
+        .single();
+
+      if (!dbMatch) {
+        reconcileFailed.value = true;
+        return;
+      }
+
+      if (dbMatch.status === "abandoned") {
+        // someone left the match before it finished
+        if (engineRefs.battleState.value !== "finished") {
+          engineRefs.battleState.value = "finished";
+          engineRefs.winner.value =
+            dbMatch.winner === user.value?.sub
+              ? myPlayerNumber.value
+              : myPlayerNumber.value === 1
+                ? 2
+                : 1;
+        }
+        return;
+      }
+
+      if (dbMatch.status === "finished") {
+        // match finished successfully
+        if (engineRefs.battleState.value !== "finished") {
+          engineRefs.battleState.value = "finished";
+          engineRefs.winner.value =
+            dbMatch.winner === match.value.player1_uid ? 1 : 2;
+        }
+        return;
+      }
+
+      // Reconcile game state if it exists and is initialized
+      if (
+        dbMatch.game_state &&
+        (dbMatch.game_state as any as SyncedGameState).initialized
+      ) {
+        const gs = dbMatch.game_state as any as SyncedGameState;
+
+        // Only apply if the database state is "ahead" of our local state (e.g., different battleState, different currentPlayer, etc.)
+        const localState = {
+          battleState: engineRefs.battleState.value,
+          currentPlayer: engineRefs.currentPlayer.value,
+          p1Hp: engineRefs.p1State.value?.hp,
+          p2Hp: engineRefs.p2State.value?.hp,
+        };
+
+        const dbState = {
+          battleState: gs.battleState,
+          currentPlayer: gs.currentPlayer,
+          p1Hp: gs.p1State?.hp,
+          p2Hp: gs.p2State?.hp,
+        };
+
+        // If states differ, apply the database state
+        if (JSON.stringify(localState) !== JSON.stringify(dbState)) {
+          isRemoteUpdate = true;
+
+          engineRefs.p1State.value = gs.p1State;
+          engineRefs.p2State.value = gs.p2State;
+          engineRefs.currentPlayer.value = gs.currentPlayer;
+          engineRefs.activeDomain.value = gs.activeDomain;
+          engineRefs.battleState.value = gs.battleState;
+          engineRefs.winner.value = gs.winner;
+          engineRefs.currentDialogue.value = gs.currentDialogue;
+          engineRefs.effectsMessage.value = gs.effectsMessage;
+          engineRefs.preventedMessage.value = gs.preventedMessage;
+
+          match.value.current_turn = dbMatch.current_turn;
+
+          nextTick().then(() => {
+            isRemoteUpdate = false;
+          });
+        }
+      }
+
+      reconcileFailed.value = false;
+    } catch {
+      reconcileFailed.value = true;
+    }
+  }
+
   function startHeartbeats() {
     pingInterval = setInterval(pingHeartbeat, 5000);
     pingHeartbeat();
     watchInterval = setInterval(checkOpponentHeartbeat, 5000); // check opponent
+    reconcileInterval = setInterval(reconcileState, 2000); // fallback reconciling
   }
 
   function stopHeartbeats() {
     if (pingInterval) clearInterval(pingInterval);
     if (watchInterval) clearInterval(watchInterval);
+    if (reconcileInterval) clearInterval(reconcileInterval);
     if (user.value?.sub)
       supabase.from("battle_heartbeats").delete().eq("uid", user.value.sub);
   }
 
   /** Subscribe to the Supabase channel and listen for changes to the row. */
-  function subscribe() {
-    if (channel) supabase.removeChannel(channel);
+  function subscribe(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (channel) supabase.removeChannel(channel);
 
-    channel = supabase.channel(`match:${matchId}`);
-    channel
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "matches",
-          filter: `id=eq.${matchId}`,
-        },
-        (payload: any) => {
-          const newState = payload.new.game_state as SyncedGameState;
-          match.value = payload.new;
+      channel = supabase.channel(`match:${matchId}`);
+      channel
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "matches",
+            filter: `id=eq.${matchId}`,
+          },
+          (payload: any) => {
+            const newState = payload.new.game_state as SyncedGameState;
+            match.value = payload.new;
 
-          if (payload.new.status === "abandoned") {
-            engineRefs.battleState.value = "finished";
+            if (payload.new.status === "abandoned") {
+              engineRefs.battleState.value = "finished";
 
-            if (payload.new.winner === user.value?.sub)
-              engineRefs.winner.value = myPlayerNumber.value; // current player won
-            else engineRefs.winner.value = myPlayerNumber.value === 1 ? 2 : 1; // current player lost
+              if (payload.new.winner === user.value?.sub)
+                engineRefs.winner.value = myPlayerNumber.value; // current player won
+              else engineRefs.winner.value = myPlayerNumber.value === 1 ? 2 : 1; // current player lost
 
-            return;
+              return;
+            }
+
+            if (newState && newState.initialized) {
+              isRemoteUpdate = true;
+
+              engineRefs.p1State.value = newState.p1State;
+              engineRefs.p2State.value = newState.p2State;
+              engineRefs.currentPlayer.value = newState.currentPlayer;
+              engineRefs.activeDomain.value = newState.activeDomain;
+              engineRefs.battleState.value = newState.battleState;
+              engineRefs.winner.value = newState.winner;
+
+              engineRefs.currentDialogue.value = newState.currentDialogue;
+              engineRefs.effectsMessage.value = newState.effectsMessage;
+              engineRefs.preventedMessage.value = newState.preventedMessage;
+
+              isInitialLoad = false;
+
+              if (
+                newState?.lastMove &&
+                onRemoteMove &&
+                newState.lastMove.player !== myPlayerNumber.value
+              )
+                onRemoteMove(
+                  newState.lastMove.name,
+                  newState.lastMove.damage,
+                  newState.lastMove.player,
+                  newState.lastMove.username,
+                  newState.lastMove.type,
+                );
+
+              nextTick().then(() => {
+                isRemoteUpdate = false;
+              });
+            }
+          },
+        )
+        .subscribe((status: string) => {
+          if (status === "SUBSCRIBED") {
+            realtimeFailed.value = false;
+            resolve();
+          } else if (status === "CHANNEL_ERROR") {
+            realtimeFailed.value = true;
+            reject(new Error());
           }
-
-          if (newState && newState.initialized) {
-            isRemoteUpdate = true;
-
-            engineRefs.p1State.value = newState.p1State;
-            engineRefs.p2State.value = newState.p2State;
-            engineRefs.currentPlayer.value = newState.currentPlayer;
-            engineRefs.activeDomain.value = newState.activeDomain;
-            engineRefs.battleState.value = newState.battleState;
-            engineRefs.winner.value = newState.winner;
-
-            engineRefs.currentDialogue.value = newState.currentDialogue;
-            engineRefs.effectsMessage.value = newState.effectsMessage;
-            engineRefs.preventedMessage.value = newState.preventedMessage;
-
-            isInitialLoad = false;
-
-            if (
-              newState?.lastMove &&
-              onRemoteMove &&
-              newState.lastMove.player !== myPlayerNumber.value
-            )
-              onRemoteMove(
-                newState.lastMove.name,
-                newState.lastMove.damage,
-                newState.lastMove.player,
-                newState.lastMove.username,
-                newState.lastMove.type,
-              );
-
-            nextTick().then(() => {
-              isRemoteUpdate = false;
-            });
-          }
-        },
-      )
-      .subscribe();
+        });
+    });
   }
 
   /** Apply state fetched on initial page load. */
@@ -335,5 +448,6 @@ export function useMultiplayerBattle(
     submitMove,
     cleanup,
     startHeartbeats,
+    hasSyncError,
   };
 }

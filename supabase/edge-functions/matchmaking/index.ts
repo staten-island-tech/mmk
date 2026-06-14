@@ -85,17 +85,10 @@ Deno.serve(async () => {
         .single();
       if (!match) continue;
 
-      // match Player 1
       await supabase
         .from("matchmaking_queue")
-        .update({ status: "matched", match_id: match.id })
-        .eq("uid", player1.uid);
-
-      // match Player 2
-      await supabase
-        .from("matchmaking_queue")
-        .update({ status: "matched", match_id: match.id })
-        .eq("uid", player2.uid);
+        .update({ status: "matched", match_id: match.id }) // update status for queue row
+        .in("uid", [player1.uid, player2.uid]); // for both players
 
       matched.add(player1.uid);
       matched.add(player2.uid);

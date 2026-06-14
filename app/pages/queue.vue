@@ -72,8 +72,9 @@ function showQueueError(message: string) {
   dialogOpen.value = true;
 }
 
-let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 let channel: ReturnType<typeof user.supabase.channel> | null = null;
+let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+let pollInterval: ReturnType<typeof setInterval> | null = null;
 
 async function heartbeat() {
   if (!user.data?.sub) return;
@@ -132,10 +133,30 @@ async function joinQueue() {
       });
   });
 
+  /**
+   * Get the status of the user's row in the queue.
+   * Sometimes, the realtime subscription may drop events unpredictably, so we can use a function that polls the queue status repeatedly as fallback.
+   * This is mostly lightweight and shouldn't impact performance too much.
+   */
+  async function pollQueueStatus() {
+    if (!user.data?.sub) return;
+
+    const { data } = await user.supabase
+      .from("matchmaking_queue")
+      .select("status, match_id")
+      .eq("uid", user.data.sub)
+      .single();
+    if (data?.status === "matched" && data.match_id) {
+      leaveQueue(false);
+      navigateTo(`/battle/${data.match_id}`);
+    }
+  }
+
   // Send heartbeat
   const { error: heartbeatError } = await user.supabase
     .from("matchmaking_heartbeats")
     .upsert(
+      // update or insert heartbeat into the table
       { uid: user.data?.sub, last_heartbeat: new Date().toISOString() },
       { onConflict: "uid" },
     );
@@ -155,17 +176,26 @@ async function joinQueue() {
 
   // Every 5 seconds, ping the "matchmaking_heartbeats" table to confirm that the user is still in the queue
   heartbeatInterval = setInterval(heartbeat, 5000);
+  pollInterval = setInterval(pollQueueStatus, 3000); // fallback polling
 
   window.addEventListener("beforeunload", handleUnload); // when tab is closed (etc.)
 }
 
 async function leaveQueue(deleteRow = true) {
   if (heartbeatInterval) {
+    // stop heartbeats
     clearInterval(heartbeatInterval);
     heartbeatInterval = null;
   }
 
+  if (pollInterval) {
+    // stop fallback polling
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
+
   if (channel) {
+    // stop listening
     channel.unsubscribe();
     channel = null;
   }
@@ -173,6 +203,7 @@ async function leaveQueue(deleteRow = true) {
   window.removeEventListener("beforeunload", handleUnload);
 
   if (deleteRow && user.data?.sub) {
+    // remove heartbeat
     await user.supabase
       .from("matchmaking_heartbeats")
       .delete()

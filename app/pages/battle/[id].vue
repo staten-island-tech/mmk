@@ -1,5 +1,15 @@
 <template>
   <div class="select-none relative flex flex-col w-full h-screen">
+    <UiModalSimple
+      :open="dialogOpen"
+      :title="dialogTitle"
+      :close-button="false"
+      :buttons="dialogButtons"
+      @close="dialogOpen = false"
+    >
+      {{ dialogMessage }}
+    </UiModalSimple>
+
     <Transition name="game" mode="out-in">
       <div
         v-if="!p1Card || !p2Card || !p1State || !p2State"
@@ -344,6 +354,35 @@ const user = useUserStore();
 const route = useRoute();
 const matchId = route.params.id as string;
 
+const dialogOpen = ref<boolean>(false);
+const dialogTitle = ref<string>("");
+const dialogMessage = ref<string>("");
+const dialogButtons = ref<DialogButton[]>([
+  {
+    label: "OK",
+    priority: 1,
+    callback: () => (dialogOpen.value = false),
+  },
+]);
+
+function showMatchError(message: string) {
+  if (dialogOpen.value) return;
+
+  dialogTitle.value = "Error Connecting to Match";
+  dialogMessage.value = message;
+  dialogButtons.value = [
+    {
+      label: "Leave Match",
+      priority: 1,
+      callback: async () => {
+        multiplayer.cleanup();
+        await navigateTo("/");
+      },
+    },
+  ];
+  dialogOpen.value = true;
+}
+
 const p1Username = ref<string>("Player 1");
 const p2Username = ref<string>("Player 2");
 
@@ -594,7 +633,18 @@ watch(
       body: { matchId },
     });
 
-    user.fetchStats(true);
+    await user.fetchStats(true);
+  },
+);
+
+watch(
+  () => multiplayer.hasSyncError.value,
+  (hasError) => {
+    if (hasError) {
+      showMatchError(
+        "Failed to connect to the match. If you're using an ad blocker or privacy tool, try disabling it; MMK's servers may be flagged as suspicious. MMK does not serve ads or track users.",
+      );
+    }
   },
 );
 
@@ -655,7 +705,13 @@ onMounted(async () => {
     p2Card.value = p2Data[0] || null;
     if (!p1Card.value || !p2Card.value) throw new Error("Cards not found.");
 
-    multiplayer.subscribe();
+    try {
+      await multiplayer.subscribe();
+    } catch (e) {
+      console.error(
+        "Failed to subscribe to realtime. Relying on polling instead.",
+      );
+    }
 
     /* If Player 1 disconnects, Player 2 wins, and Player 1 refreshes, the page won't realize the match was abandoned.
      * The first check here just makes sure the match was actually abandoned.
