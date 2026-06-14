@@ -18,6 +18,11 @@
         key="battle"
         class="relative w-full h-full flex flex-col"
       >
+        <UiGameplayMovePopup
+          :popups="battlePopups"
+          class="pointer-events-none z-50 absolute inset-0"
+        />
+
         <Transition name="win">
           <div
             v-if="battleState === 'finished'"
@@ -331,6 +336,8 @@
 </template>
 
 <script setup lang="ts">
+import { type PopupType } from "~/composables/useBattlePopup";
+
 const config = useRuntimeConfig();
 const user = useUserStore();
 
@@ -386,7 +393,11 @@ const currentPlayerState = computed<PlayerState>(() => {
   return currentPlayer.value === 1 ? p1State.value! : p2State.value!;
 });
 
+const lastMove = ref<SyncedGameState["lastMove"]>(null);
+
 let finalized = false;
+
+const { popups: battlePopups, show: showPopup } = useBattlePopup();
 
 const battle = useBattleEngine(
   p1State,
@@ -416,7 +427,26 @@ const multiplayer = useMultiplayerBattle(matchId, battle, {
   effectsMessage,
   currentDialogue,
   preventedMessage,
+  lastMove,
+  onRemoteMove: (
+    name: string,
+    damage: number | null,
+    player: 1 | 2,
+    username: string,
+    type: string,
+  ) => {
+    showPopup(name, damage, player as 1 | 2, username, type as PopupType);
+  },
 });
+
+function getMoveType(move: CardMove["move"]): PopupType {
+  if (move.domain) return "domain";
+  if (move.selfPoison || move.enemyPoison) return "poison";
+  if (move.damage) return "attack";
+  if (move.selfDefenseMultiplier || move.selfDefenseScalarBoost)
+    return "defense";
+  return "default";
+}
 
 function selectMove(cardMove: CardMove) {
   if (battleState.value !== "player_turn") return;
@@ -431,6 +461,26 @@ function selectMove(cardMove: CardMove) {
     enqueueDialogue(selfCard.name, move.selfCustomDialogue);
   if (move.enemyCustomDialogue)
     enqueueDialogue(enemyCard.name, move.enemyCustomDialogue);
+
+  const username =
+    currentPlayer.value === 1 ? p1Username.value : p2Username.value;
+
+  // Show a popup for the move
+  showPopup(
+    move.name,
+    move.damage ?? null,
+    currentPlayer.value,
+    username,
+    getMoveType(move),
+  );
+
+  lastMove.value = {
+    name: move.name,
+    damage: move.damage ?? null,
+    player: currentPlayer.value,
+    username,
+    type: getMoveType(move),
+  };
 
   const runMoveExecution = () => {
     multiplayer.submitMove(move);

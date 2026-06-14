@@ -1,4 +1,5 @@
 import type { Database } from "~/types/database.types";
+
 export function useMultiplayerBattle(
   matchId: string,
   battle: ReturnType<typeof useBattleEngine>,
@@ -20,6 +21,16 @@ export function useMultiplayerBattle(
     if (myPlayerNumber.value === null) return true;
     return engineRefs.currentPlayer.value !== myPlayerNumber.value;
   });
+
+  const onRemoteMove:
+    | ((
+        name: string,
+        damage: number | null,
+        player: 1 | 2,
+        username: string,
+        type: string,
+      ) => void)
+    | undefined = engineRefs.onRemoteMove;
 
   let channel: any = null;
 
@@ -46,7 +57,10 @@ export function useMultiplayerBattle(
       currentDialogue: engineRefs.currentDialogue.value,
       effectsMessage: engineRefs.effectsMessage.value,
       preventedMessage: engineRefs.preventedMessage.value,
+      lastMove: engineRefs.lastMove?.value ?? null,
     };
+
+    if (engineRefs.lastMove) engineRefs.lastMove.value = null; // stop subsequent syncs from triggering the popup
 
     const shouldUpdateTurn =
       newState.battleState === "player_turn" ||
@@ -209,6 +223,19 @@ export function useMultiplayerBattle(
             engineRefs.preventedMessage.value = newState.preventedMessage;
 
             isInitialLoad = false;
+
+            if (
+              newState?.lastMove &&
+              onRemoteMove &&
+              newState.lastMove.player !== myPlayerNumber.value
+            )
+              onRemoteMove(
+                newState.lastMove.name,
+                newState.lastMove.damage,
+                newState.lastMove.player,
+                newState.lastMove.username,
+                newState.lastMove.type,
+              );
 
             nextTick().then(() => {
               isRemoteUpdate = false;

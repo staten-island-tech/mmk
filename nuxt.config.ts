@@ -18,9 +18,6 @@ export default defineNuxtConfig({
     "@fontsource/rajdhani/600.css",
     "@fontsource/rajdhani/700.css",
   ],
-  imports: {
-    dirs: ["types/**/*.d.ts"],
-  },
   supabase: {
     types: "./app/types/database.types.ts",
     redirectOptions: {

@@ -31,6 +31,14 @@ declare global {
     effectsMessage: string;
     /** Message shown when a player is prevented from acting. */
     preventedMessage: string;
+    /** Details about the last move made in the game. */
+    lastMove?: {
+      name: string;
+      damage: number | null;
+      player: 1 | 2;
+      username: string;
+      type: string;
+    } | null;
   }
 
   /** A single temporary effect applied to a player. */
