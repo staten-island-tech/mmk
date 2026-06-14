@@ -7,6 +7,7 @@ export default defineNuxtConfig({
     "@nuxtjs/supabase",
     "@pinia/nuxt",
     "@nuxt/icon",
+    "@nuxt/content",
   ],
   css: [
     "@fontsource/pixelify-sans/400.css",
@@ -22,9 +23,9 @@ export default defineNuxtConfig({
     types: "./app/types/database.types.ts",
     redirectOptions: {
       login: "/login",
-      callback: "/confirm",
+      callback: "/",
       include: undefined,
-      exclude: ["/register"],
+      exclude: ["/register", "/privacy"],
       saveRedirectToCookie: false,
     },
   },
@@ -46,3 +47,4 @@ export default defineNuxtConfig({
     pageTransition: { name: "default", mode: "out-in" },
   },
 });
+

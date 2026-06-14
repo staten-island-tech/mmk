@@ -1,3 +1,4 @@
+import defaultTheme from "tailwindcss/defaultTheme";
 import colors from "tailwindcss/colors";
 
 /** @type {import('tailwindcss').Config} */
@@ -138,6 +139,7 @@ export default {
         "transparent-lg": "6px 6px 0 0 rgba(0, 0, 0, 0.25)",
       },
       fontFamily: {
+        system: defaultTheme.fontFamily.sans,
         sans: ["Pixelify Sans", "monospace"],
         alt: ["Rajdhani", "sans-serif"],
       },
@@ -212,5 +214,5 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [require("@tailwindcss/typography")],
 };
