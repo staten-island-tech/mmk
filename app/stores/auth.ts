@@ -36,10 +36,6 @@ export const useAuthStore = defineStore("auth", () => {
       message: "At least one letter",
     },
     { test: (p: string) => /[0-9]/.test(p), message: "At least one number" },
-    {
-      test: (p: string) => /[^a-z0-9]/i.test(p),
-      message: "At least one special character",
-    },
   ];
 
   return { usernameRules, passwordRules };

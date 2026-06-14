@@ -31,11 +31,7 @@ const RegistrationSchema = z
       .string()
       .min(8, "Password must be at least 8 characters.")
       .regex(/[a-z]/i, "Password must contain at least one letter.")
-      .regex(/[0-9]/, "Password must contain at least one number.")
-      .regex(
-        /[^a-z0-9]/i,
-        "Password must contain at least one special character.",
-      ),
+      .regex(/[0-9]/, "Password must contain at least one number."),
     confirmPassword: z.string(),
   })
   // absolute bummer that I have to write this ugly part to get the password confirmation working, but oh well.
