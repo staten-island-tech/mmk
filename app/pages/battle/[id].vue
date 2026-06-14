@@ -375,6 +375,7 @@ function showMatchError(message: string) {
       label: "Leave Match",
       priority: 1,
       callback: async () => {
+        handleUnload();
         multiplayer.cleanup();
         await navigateTo("/");
       },
