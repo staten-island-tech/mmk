@@ -58,7 +58,7 @@ export const useUserStore = defineStore("user", () => {
           battleCard.value = parsed.battleCard;
         } else localStorage.removeItem(STORAGE_KEY); // expired cache
       }
-    } catch (_) {
+    } catch {
       localStorage.removeItem(STORAGE_KEY);
     }
   }

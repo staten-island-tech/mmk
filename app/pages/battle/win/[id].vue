@@ -179,7 +179,7 @@ onMounted(async () => {
 
     if (result.success && result.card) card.value = result.card;
 
-    user.fetchStats(true); // force refresh
+    await user.fetchStats(true); // force refresh
 
     for (const [i, { duration, callback }] of steps.entries()) {
       step.value = i;

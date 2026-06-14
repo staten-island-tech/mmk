@@ -212,7 +212,7 @@ async function loadCards() {
 
   try {
     await user.fetchStats();
-  } catch (_) {
+  } catch {
     dialogTitle.value = "Error Fetching Stats";
     dialogMessage.value = "Could not retrieve your stats. Please try again.";
     dialogOpen.value = true;
