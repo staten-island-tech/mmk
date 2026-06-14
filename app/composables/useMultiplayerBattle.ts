@@ -23,6 +23,7 @@ export function useMultiplayerBattle(
   const hasSyncError = computed(
     () => realtimeFailed.value && reconcileFailed.value,
   );
+  let lastLocalSyncTime = 0;
 
   const isRemoteTurn = computed(() => {
     if (myPlayerNumber.value === null) return true;
@@ -119,6 +120,7 @@ export function useMultiplayerBattle(
     gameStateDigest,
     () => {
       if (isInitialLoad || isRemoteUpdate) return;
+      lastLocalSyncTime = Date.now();
       syncQueue = syncQueue.then(() => nextTick()).then(() => syncDatabase());
     },
     { immediate: false },
@@ -181,6 +183,7 @@ export function useMultiplayerBattle(
    */
   async function reconcileState() {
     if (!match.value || engineRefs.battleState.value === "finished") return;
+    if (Date.now() - lastLocalSyncTime < 4000) return; // prevent overwriting a pending local sync
 
     try {
       const { data: dbMatch } = await supabase
@@ -268,11 +271,17 @@ export function useMultiplayerBattle(
     }
   }
 
+  function handleVisibilityChange() {
+    if (document.visibilityState === "visible") reconcileState();
+  }
+
   function startHeartbeats() {
     pingInterval = setInterval(pingHeartbeat, 5000);
     pingHeartbeat();
     watchInterval = setInterval(checkOpponentHeartbeat, 5000); // check opponent
     reconcileInterval = setInterval(reconcileState, 2000); // fallback reconciling
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
   }
 
   function stopHeartbeats() {
@@ -281,6 +290,8 @@ export function useMultiplayerBattle(
     if (reconcileInterval) clearInterval(reconcileInterval);
     if (user.value?.sub)
       supabase.from("battle_heartbeats").delete().eq("uid", user.value.sub);
+
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
   }
 
   /** Subscribe to the Supabase channel and listen for changes to the row. */
