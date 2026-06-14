@@ -55,7 +55,11 @@
 
         <div class="flex items-center gap-2">
           <Icon name="pixelarticons:trophy" class="w-4 h-4 text-emerald-500" />
-          {{ user.wins ?? "--" }} {{ user.wins === 1 ? "win" : "wins" }}
+          {{ user.wins ?? "--" }} {{ user.wins === 1 ? "win" : "wins" }} ({{
+            user.games
+              ? (((user.wins ?? 0) / user.games) * 100).toFixed(1)
+              : "--"
+          }}%)
         </div>
 
         <div class="flex items-center gap-2">
