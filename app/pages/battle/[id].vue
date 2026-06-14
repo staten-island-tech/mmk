@@ -244,11 +244,7 @@
               class="h-full min-h-0"
             >
               <UiGameplayDialogue
-                :speaker="
-                  currentPlayer === 1
-                    ? `${p1Username} (${p1Card.name})`
-                    : `${p2Username} (${p2Card.name})`
-                "
+                :speaker="currentDialogue.speaker"
                 :dialogue-text="currentDialogue.text"
                 :typing-speed-cps="50"
                 @finished="onDialogueFinished"
@@ -498,9 +494,15 @@ function selectMove(cardMove: CardMove) {
 
   dialogueQueue.value = [];
   if (move.selfCustomDialogue)
-    enqueueDialogue(selfCard.name, move.selfCustomDialogue);
+    enqueueDialogue(
+      `${currentPlayer.value === 1 ? p1Username.value : p2Username.value} (${selfCard.name})`,
+      move.selfCustomDialogue,
+    );
   if (move.enemyCustomDialogue)
-    enqueueDialogue(enemyCard.name, move.enemyCustomDialogue);
+    enqueueDialogue(
+      `${currentPlayer.value === 1 ? p2Username.value : p1Username.value} (${enemyCard.name})`,
+      move.enemyCustomDialogue,
+    );
 
   const username =
     currentPlayer.value === 1 ? p1Username.value : p2Username.value;
