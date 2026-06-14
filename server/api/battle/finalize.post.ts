@@ -3,7 +3,7 @@ import {
   serverSupabaseUser,
 } from "#supabase/server";
 import { z } from "zod";
-import type { Database } from "~/types/database.types";
+import type { Database } from "#shared/types/database.types";
 
 const FinalizationSchema = z.object({
   matchId: z.uuid(),
