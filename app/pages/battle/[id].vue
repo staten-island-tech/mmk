@@ -233,9 +233,9 @@
         <Transition name="panel">
           <UiCardSimple
             v-if="battleState !== 'finished'"
-            class="z-20 p-8 w-full h-1/4 !max-w-full"
+            class="z-20 relative p-8 w-full h-1/4 !max-w-full"
             :class="{
-              'pointer-events-none opacity-50':
+              'cursor-not-allowed brightness-75':
                 battleState === 'player_turn' && multiplayer.isRemoteTurn.value,
             }"
           >
@@ -313,6 +313,11 @@
                     :currentEnergy="currentPlayerState.moveEnergy"
                     @select="selectMove"
                     class="w-full h-full"
+                    :class="{
+                      'pointer-events-none':
+                        battleState === 'player_turn' &&
+                        multiplayer.isRemoteTurn.value,
+                    }"
                   />
                 </div>
               </div>
@@ -492,6 +497,13 @@ function selectMove(cardMove: CardMove) {
   const selfCard = currentPlayer.value === 1 ? p1Card.value! : p2Card.value!;
   const enemyCard = currentPlayer.value === 1 ? p2Card.value! : p1Card.value!;
 
+  let actualDamage: number | null = null;
+  if (move.damage && p1State.value && p2State.value) {
+    const attacker = currentPlayer.value === 1 ? p1State.value : p2State.value;
+    const defender = currentPlayer.value === 1 ? p2State.value : p1State.value;
+    actualDamage = battle.calcDamage(attacker, move, defender);
+  }
+
   dialogueQueue.value = [];
   if (move.selfCustomDialogue)
     enqueueDialogue(
@@ -510,7 +522,7 @@ function selectMove(cardMove: CardMove) {
   // Show a popup for the move
   showPopup(
     move.name,
-    move.damage ?? null,
+    actualDamage,
     currentPlayer.value,
     username,
     getMoveType(move),
@@ -518,7 +530,7 @@ function selectMove(cardMove: CardMove) {
 
   lastMove.value = {
     name: move.name,
-    damage: move.damage ?? null,
+    damage: actualDamage,
     player: currentPlayer.value,
     username,
     type: getMoveType(move),

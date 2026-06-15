@@ -225,6 +225,25 @@ export function useMultiplayerBattle(
       ) {
         const gs = dbMatch.game_state as any as SyncedGameState;
 
+        // Check for new remote move
+        if (
+          gs.lastMove &&
+          onRemoteMove &&
+          gs.lastMove.player !== myPlayerNumber.value
+        ) {
+          const lastSeenMove = JSON.stringify(engineRefs.lastMove?.value);
+          const incomingMove = JSON.stringify(gs.lastMove);
+
+          if (lastSeenMove !== incomingMove)
+            onRemoteMove(
+              gs.lastMove.name,
+              gs.lastMove.damage,
+              gs.lastMove.player,
+              gs.lastMove.username,
+              gs.lastMove.type,
+            );
+        }
+
         // Only apply if the database state is "ahead" of our local state (e.g., different battleState, different currentPlayer, etc.)
         const localState = {
           battleState: engineRefs.battleState.value,
