@@ -21,7 +21,7 @@
       >
         <img
           :src="card.defaultSprite"
-          class="w-full h-full object-cover"
+          class="w-full h-full object-contain"
           :class="flip ? 'scale-x-[-1]' : ''"
         />
       </div>
