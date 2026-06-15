@@ -45,32 +45,28 @@ export function useBattleEngine(
     for (const [name, state] of entries) {
       for (const e of state.activeEffects) {
         const label = typeLabel[e.type];
-        if (label) {
+        if (label)
           lines.push(
             `${name}: ${label}${e.value} for ${turnsText(e.turnsLeft)}.`,
           );
-        }
       }
 
-      if (state.poisonTurns > 0) {
+      if (state.poisonTurns > 0)
         lines.push(
           `${name}: Poisoned ×${state.poisonMultiplier} for ${turnsText(
             state.poisonTurns,
           )}.`,
         );
-      }
 
-      if (state.preventedTurns > 0) {
+      if (state.preventedTurns > 0)
         lines.push(
           `${name}: Cannot act for ${turnsText(state.preventedTurns)}.`,
         );
-      }
 
-      if (state.infiniteHealthTurns > 0) {
+      if (state.infiniteHealthTurns > 0)
         lines.push(
           `${name}: Invulnerable for ${turnsText(state.infiniteHealthTurns)}.`,
         );
-      }
     }
 
     return lines.join("\n");
@@ -151,7 +147,7 @@ export function useBattleEngine(
 
     if (s.poisonTurns > 0) {
       if (s.infiniteHealthTurns <= 0)
-        s.hp = Math.round(s.hp * s.poisonMultiplier);
+        s.hp = Math.min(s.maxHp, Math.round(s.hp * s.poisonMultiplier));
 
       s.poisonTurns--;
       if (s.poisonTurns === 0) s.poisonMultiplier = 1;
