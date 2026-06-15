@@ -123,7 +123,7 @@ const selfPoisonDisplay = computed<string>(() => {
 const selfPreventMoveDisplay = computed<string>(() => {
   const turns = props.move.move.selfPreventMove;
   if (!turns) return "";
-  return `${turns}-turn stun`;
+  return `${turns}-turn self-stun`;
 });
 
 const enemyAttackDisplay = computed<string>(() => {
@@ -159,7 +159,7 @@ const enemyEnergyDisplay = computed<string>(() => {
     return `${multiplier[1]}-turn enemy energy ×${multiplier[0]}`;
   if (!multiplier && scalar)
     return `${scalar[1]}-turn enemy energy +${scalar[0]}`;
-  return `${multiplier![1]}-turn enemy energy ×${multiplier![0]}, ${scalar[1]}-turn enemy energy +${scalar![0]}`;
+  return `${multiplier![1]}-turn enemy energy ×${multiplier![0]}, ${scalar![1]}-turn enemy energy +${scalar![0]}`;
 });
 
 const enemyEnergyGainDisplay = computed<string>(() => {
