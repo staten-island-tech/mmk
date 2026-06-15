@@ -234,7 +234,7 @@ export function useMultiplayerBattle(
           const lastSeenMove = JSON.stringify(engineRefs.lastMove?.value);
           const incomingMove = JSON.stringify(gs.lastMove);
 
-          if (lastSeenMove !== incomingMove)
+          if (lastSeenMove !== incomingMove) {
             onRemoteMove(
               gs.lastMove.name,
               gs.lastMove.damage,
@@ -242,6 +242,8 @@ export function useMultiplayerBattle(
               gs.lastMove.username,
               gs.lastMove.type,
             );
+            engineRefs.lastMove.value = gs.lastMove;
+          }
         }
 
         // Only apply if the database state is "ahead" of our local state (e.g., different battleState, different currentPlayer, etc.)
@@ -359,7 +361,7 @@ export function useMultiplayerBattle(
                 newState?.lastMove &&
                 onRemoteMove &&
                 newState.lastMove.player !== myPlayerNumber.value
-              )
+              ) {
                 onRemoteMove(
                   newState.lastMove.name,
                   newState.lastMove.damage,
@@ -367,6 +369,8 @@ export function useMultiplayerBattle(
                   newState.lastMove.username,
                   newState.lastMove.type,
                 );
+                engineRefs.lastMove.value = newState.lastMove;
+              }
 
               nextTick().then(() => {
                 isRemoteUpdate = false;
