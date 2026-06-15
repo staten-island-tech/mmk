@@ -1,4 +1,4 @@
-import type { Database } from "~/types/database.types";
+import type { Database } from "#shared/types/database.types";
 
 export default defineNuxtRouteMiddleware(async () => {
   const supabase = useSupabaseClient<Database>();

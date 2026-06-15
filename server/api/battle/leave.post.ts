@@ -1,6 +1,6 @@
 import * as z from "zod";
 import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "~/types/database.types";
+import type { Database } from "#shared/types/database.types";
 
 const MatchAbandonmentSchema = z.object({
   uid: z.uuid(),

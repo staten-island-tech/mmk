@@ -1,4 +1,4 @@
-import type { Database } from "~/types/database.types";
+import type { Database } from "#shared/types/database.types";
 
 export function useMultiplayerBattle(
   matchId: string,
@@ -23,7 +23,6 @@ export function useMultiplayerBattle(
   const hasSyncError = computed(
     () => realtimeFailed.value && reconcileFailed.value,
   );
-  let lastLocalSyncTime = 0;
 
   const isRemoteTurn = computed(() => {
     if (myPlayerNumber.value === null) return true;
@@ -120,7 +119,6 @@ export function useMultiplayerBattle(
     gameStateDigest,
     () => {
       if (isInitialLoad || isRemoteUpdate) return;
-      lastLocalSyncTime = Date.now();
       syncQueue = syncQueue.then(() => nextTick()).then(() => syncDatabase());
     },
     { immediate: false },
@@ -183,7 +181,6 @@ export function useMultiplayerBattle(
    */
   async function reconcileState() {
     if (!match.value || engineRefs.battleState.value === "finished") return;
-    if (Date.now() - lastLocalSyncTime < 4000) return; // prevent overwriting a pending local sync
 
     try {
       const { data: dbMatch } = await supabase
@@ -227,6 +224,27 @@ export function useMultiplayerBattle(
         (dbMatch.game_state as any as SyncedGameState).initialized
       ) {
         const gs = dbMatch.game_state as any as SyncedGameState;
+
+        // Check for new remote move
+        if (
+          gs.lastMove &&
+          onRemoteMove &&
+          gs.lastMove.player !== myPlayerNumber.value
+        ) {
+          const lastSeenMove = JSON.stringify(engineRefs.lastMove?.value);
+          const incomingMove = JSON.stringify(gs.lastMove);
+
+          if (lastSeenMove !== incomingMove) {
+            onRemoteMove(
+              gs.lastMove.name,
+              gs.lastMove.damage,
+              gs.lastMove.player,
+              gs.lastMove.username,
+              gs.lastMove.type,
+            );
+            engineRefs.lastMove.value = gs.lastMove;
+          }
+        }
 
         // Only apply if the database state is "ahead" of our local state (e.g., different battleState, different currentPlayer, etc.)
         const localState = {
@@ -343,7 +361,7 @@ export function useMultiplayerBattle(
                 newState?.lastMove &&
                 onRemoteMove &&
                 newState.lastMove.player !== myPlayerNumber.value
-              )
+              ) {
                 onRemoteMove(
                   newState.lastMove.name,
                   newState.lastMove.damage,
@@ -351,6 +369,8 @@ export function useMultiplayerBattle(
                   newState.lastMove.username,
                   newState.lastMove.type,
                 );
+                engineRefs.lastMove.value = newState.lastMove;
+              }
 
               nextTick().then(() => {
                 isRemoteUpdate = false;
@@ -381,6 +401,7 @@ export function useMultiplayerBattle(
     engineRefs.currentDialogue.value = gs.currentDialogue;
     engineRefs.effectsMessage.value = gs.effectsMessage;
     engineRefs.preventedMessage.value = gs.preventedMessage;
+    isInitialLoad = false;
   }
 
   /** Start the game and set initial state. Should only be activated by the first player. */

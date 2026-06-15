@@ -3,7 +3,7 @@ import {
   serverSupabaseServiceRole,
   serverSupabaseUser,
 } from "#supabase/server";
-import type { Database } from "~/types/database.types";
+import type { Database } from "#shared/types/database.types";
 
 const PrimaryCardSchema = z.object({
   id: z.uuid().nullable(),

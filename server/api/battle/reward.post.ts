@@ -3,7 +3,7 @@ import {
   serverSupabaseServiceRole,
   serverSupabaseUser,
 } from "#supabase/server";
-import type { Database } from "~/types/database.types";
+import type { Database } from "#shared/types/database.types";
 
 const RewardClaimSchema = z.object({
   matchId: z.uuid(),
@@ -71,10 +71,15 @@ export default defineEventHandler(async (event) => {
     const response = await $fetch(`${config.public.mmkPanelApi}/cards/random`, {
       query: { excludeId: excludeIds }, // get all card IDs except for the ones owned by the user
     });
+    if (Array.isArray(response) && response.length === 0)
+      throw new Error(
+        "We searched far and wide for a new card, but found nothing. Perhaps you collected them all already?",
+      );
+
     randomCard = Array.isArray(response) ? response[0] : response;
 
     if (!randomCard || !randomCard.id)
-      throw new Error("Failed to fetch random card.");
+      throw new Error("Failed to find a new card.");
 
     const { error: insertError } = await supabase.from("user_cards").insert({
       uid: user.sub,
