@@ -590,8 +590,6 @@ function onPreventedFinished() {
     stateRef.value!.preventedTurns - 1,
   );
 
-  battle.regenEnergyAndPoison(stateRef);
-  battle.tickEffects(stateRef);
   battle.switchTurn();
 }
 
