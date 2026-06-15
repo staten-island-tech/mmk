@@ -572,7 +572,9 @@ function advanceDialogue() {
 }
 
 function onDialogueFinished() {
-  advanceDialogue();
+  if (dialogueQueue.value.length > 0 || afterDialogueCallback)
+    // only the player who started it can advance it
+    advanceDialogue();
 }
 
 function onEffectsFinished() {
@@ -581,7 +583,7 @@ function onEffectsFinished() {
 }
 
 function onPreventedFinished() {
-  if (currentPlayer.value === multiplayer.myPlayerNumber.value) return;
+  if (currentPlayer.value !== multiplayer.myPlayerNumber.value) return;
   if (!p1State.value || !p2State.value) return;
 
   const stateRef = currentPlayer.value === 1 ? p1State : p2State;
@@ -590,8 +592,6 @@ function onPreventedFinished() {
     stateRef.value!.preventedTurns - 1,
   );
 
-  battle.regenEnergyAndPoison(stateRef);
-  battle.tickEffects(stateRef);
   battle.switchTurn();
 }
 
