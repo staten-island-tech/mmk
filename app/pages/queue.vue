@@ -97,6 +97,7 @@ async function heartbeat() {
 }
 
 async function joinQueue() {
+  await user.fetchStats(true);
   channel = user.supabase.channel("queue-entry"); // realtime connection
 
   /* Watch for updates to the user's row in the "matchmaking_queue" table.
@@ -136,7 +137,7 @@ async function joinQueue() {
   /**
    * Get the status of the user's row in the queue.
    * Sometimes, the realtime subscription may drop events unpredictably, so we can use a function that polls the queue status repeatedly as fallback.
-   * This is mostly lightweight and shouldn't impact performance too much.
+   * This is mostly lightweight and shouldn't impact performance too much, so
    */
   async function pollQueueStatus() {
     if (!user.data?.sub) return;

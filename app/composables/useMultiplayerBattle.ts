@@ -23,6 +23,7 @@ export function useMultiplayerBattle(
   const hasSyncError = computed(
     () => realtimeFailed.value && reconcileFailed.value,
   );
+  let lastLocalSyncTime: number | null = null;
 
   const isRemoteTurn = computed(() => {
     if (myPlayerNumber.value === null) return true;
@@ -119,6 +120,7 @@ export function useMultiplayerBattle(
     gameStateDigest,
     () => {
       if (isInitialLoad || isRemoteUpdate) return;
+      lastLocalSyncTime = Date.now();
       syncQueue = syncQueue.then(() => nextTick()).then(() => syncDatabase());
     },
     { immediate: false },
@@ -182,12 +184,16 @@ export function useMultiplayerBattle(
   async function reconcileState() {
     if (!match.value || engineRefs.battleState.value === "finished") return;
 
+    const capturedSyncTime = lastLocalSyncTime;
+
     try {
       const { data: dbMatch } = await supabase
         .from("matches")
         .select("game_state, status, winner, current_turn")
         .eq("id", matchId)
         .single();
+
+      if (lastLocalSyncTime !== capturedSyncTime) return;
 
       if (!dbMatch) {
         reconcileFailed.value = true;
