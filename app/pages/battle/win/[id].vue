@@ -36,7 +36,14 @@
 
         <!-- Card reveal -->
         <template v-else-if="step === 2">
-          <h1>A new card has been added to your collection!</h1>
+          <h1 v-if="isDuplicate">
+            A familiar face appears. You pulled a card you already own! Better
+            luck next time.
+          </h1>
+          <h1 v-else>
+            A new fragment joins your tapestry. You unlocked a new card! May its
+            power rest in your hands.
+          </h1>
           <div class="flex gap-8 mt-4">
             <div
               class="flex flex-col items-center gap-8"
@@ -142,6 +149,7 @@ const step = ref<number>(-1);
 // Card reveal step
 const card = ref<Card | null>(null);
 const revealed = ref<boolean>(false);
+const isDuplicate = ref<boolean>(false);
 
 const steps: {
   duration?: number;
@@ -168,6 +176,7 @@ onMounted(async () => {
     const result = await $fetch<{
       // fetch reward first
       success?: boolean;
+      duplicateCard?: boolean;
       card?: Card;
       alreadyRewarded?: boolean;
     }>("/api/battle/reward", {
@@ -176,8 +185,8 @@ onMounted(async () => {
     });
 
     if (result.alreadyRewarded) throw Error("Already rewarded for this match.");
-
     if (result.success && result.card) card.value = result.card;
+    if (result.duplicateCard) isDuplicate.value = true;
 
     await user.fetchStats(true); // force refresh
 

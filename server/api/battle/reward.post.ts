@@ -66,11 +66,7 @@ export default defineEventHandler(async (event) => {
   let randomCard: Card;
 
   try {
-    const excludeIds = userCardsData.map((c) => c.card_id).join(",");
-
-    const response = await $fetch(`${config.public.mmkPanelApi}/cards/random`, {
-      query: { excludeId: excludeIds }, // get all card IDs except for the ones owned by the user
-    });
+    const response = await $fetch(`${config.public.mmkPanelApi}/cards/random`);
     if (Array.isArray(response) && response.length === 0)
       throw new Error(
         "We searched far and wide for a new card, but found nothing. Perhaps you collected them all already?",
@@ -80,6 +76,15 @@ export default defineEventHandler(async (event) => {
 
     if (!randomCard || !randomCard.id)
       throw new Error("Failed to find a new card.");
+
+    // duplicate card
+    if (userCardsData.some((card) => card.card_id === randomCard.id)) {
+      await supabase
+        .from("matches")
+        .update({ rewarded: true })
+        .eq("id", matchId);
+      return { success: true, duplicateCard: true, card: randomCard };
+    }
 
     const { error: insertError } = await supabase.from("user_cards").insert({
       uid: user.sub,
