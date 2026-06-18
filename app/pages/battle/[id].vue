@@ -447,7 +447,7 @@ const lastMove = ref<SyncedGameState["lastMove"]>(null);
 
 let finalized = false;
 
-const { popups: battlePopups, show: showPopup } = useBattlePopup();
+const { popups: battlePopups, show: showPopup } = useBattlePopup(battleState);
 
 const battle = useBattleEngine(
   p1State,

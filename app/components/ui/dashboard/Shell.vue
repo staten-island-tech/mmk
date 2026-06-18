@@ -38,30 +38,47 @@
     <footer
       class="shrink-0 flex flex-wrap justify-between items-center p-4 text-slate-500 border-4 border-double border-card-border ring-4 ring-card-ring ring-inset bg-card shadow-transparent-lg"
     >
-      <div class="flex items-center gap-x-4 text-sm uppercase">
+      <div
+        class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm uppercase"
+      >
         <div class="flex items-center gap-2">
           <Icon
             name="pixelarticons:briefcase-account"
             class="w-4 h-4 text-red-500"
           />
-          {{ user.cards?.length ?? "--" }}
-          {{ user.cards?.length === 1 ? "card" : "cards" }}
+          <span>
+            {{ user.cards?.length ?? "--" }}
+            <span class="hidden sm:inline">
+              {{ user.cards?.length === 1 ? " card" : " cards" }}
+            </span>
+          </span>
         </div>
 
         <div class="flex items-center gap-2">
           <Icon name="pixelarticons:gamepad" class="w-4 h-4 text-indigo-500" />
-          {{ user.games ?? "--" }} {{ user.games === 1 ? "game" : "games" }}
+          <span>
+            {{ user.games ?? "--" }}
+            <span class="hidden sm:inline">{{
+              user.games === 1 ? "game" : "games"
+            }}</span>
+          </span>
         </div>
 
         <div class="flex items-center gap-2">
           <Icon name="pixelarticons:trophy" class="w-4 h-4 text-emerald-500" />
-          {{ user.wins ?? "--" }} {{ user.wins === 1 ? "win" : "wins" }} ({{
-            user.games != null
-              ? user.games === 0
-                ? "0"
-                : (((user.wins ?? 0) / user.games) * 100).toFixed(1)
-              : "--"
-          }}%)
+          <span>
+            {{ user.wins ?? "--" }}
+            <span class="hidden sm:inline">
+              {{ user.wins === 1 ? "win" : "wins" }}
+              ({{
+                user.games != null
+                  ? user.games === 0
+                    ? "0"
+                    : (((user.wins ?? 0) / user.games) * 100).toFixed(1)
+                  : "--"
+              }}%)
+            </span>
+          </span>
         </div>
 
         <div class="flex items-center gap-2">
