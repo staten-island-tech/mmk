@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
     randomCard = Array.isArray(response) ? response[0] : response;
 
     if (!randomCard || !randomCard.id)
-      throw new Error("Failed to find a new card.");
+      throw new Error("Failed to find a card to reward.");
 
     // duplicate card
     if (userCardsData.some((card) => card.card_id === randomCard.id)) {
