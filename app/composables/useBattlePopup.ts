@@ -12,6 +12,7 @@ export interface BattlePopup {
 export function useBattlePopup() {
   const popups = ref<BattlePopup[]>([]);
   let nextId = 0;
+  let hideTimeout: ReturnType<typeof setTimeout> | null = null;
 
   function show(
     moveName: string,
@@ -20,13 +21,13 @@ export function useBattlePopup() {
     username: string,
     type: PopupType = "default",
   ) {
-    const existingPopup = popups.value.find((p) => p.player === player);
-    if (existingPopup) return;
+    if (hideTimeout) clearTimeout(hideTimeout);
 
     const id = nextId++;
-    popups.value.push({ id, moveName, damage, player, username, type });
 
-    setTimeout(() => {
+    popups.value = [{ id, moveName, damage, player, username, type }];
+
+    hideTimeout = setTimeout(() => {
       popups.value = popups.value.filter((p) => p.id !== id);
     }, 2200);
   }
