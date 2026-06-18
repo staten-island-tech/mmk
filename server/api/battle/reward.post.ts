@@ -66,7 +66,9 @@ export default defineEventHandler(async (event) => {
   let randomCard: Card;
 
   try {
-    const response = await $fetch(`${config.public.mmkPanelApi}/cards/random`);
+    const response = await $fetch(`${config.public.mmkPanelApi}/cards/random`, {
+      query: { weighted: true },
+    });
     if (Array.isArray(response) && response.length === 0)
       throw new Error(
         "We searched far and wide for a new card, but found nothing. Perhaps you collected them all already?",
@@ -83,7 +85,39 @@ export default defineEventHandler(async (event) => {
         .from("matches")
         .update({ rewarded: true })
         .eq("id", matchId);
-      return { success: true, duplicateCard: true, card: randomCard };
+
+      // get current user resonance
+      const { data: userStatsData, error: userStatsError } = await supabase
+        .from("user_stats")
+        .select("resonance")
+        .eq("uid", user.sub)
+        .single();
+
+      if (userStatsError || !userStatsData)
+        throw createError({
+          statusCode: 500,
+          statusMessage: "Profile not found.",
+        });
+
+      const resonance = Math.max(
+        1,
+        Math.floor(randomCard.rarity.weight / 2) ** 2,
+      );
+
+      // give users resonance for dupes
+      await supabase
+        .from("user_stats")
+        .update({
+          resonance: (userStatsData.resonance ?? 0) + resonance,
+        })
+        .eq("uid", user.sub);
+
+      return {
+        success: true,
+        duplicateCard: true,
+        card: randomCard,
+        resonance,
+      };
     }
 
     const { error: insertError } = await supabase.from("user_cards").insert({

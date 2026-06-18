@@ -5,7 +5,7 @@
     <header
       class="flex items-center justify-between gap-4 px-6 py-4 border-4 border-double border-card-border ring-4 ring-card-ring ring-inset bg-card shadow-transparent-lg"
     >
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-4 min-w-0">
         <h1
           class="cursor-pointer text-2xl tracking-widest font-sans font-bold text-primary-foreground uppercase"
           @click="navigateTo('/')"
@@ -14,17 +14,26 @@
         </h1>
 
         <span
-          class="hidden sm:block text-sm tracking-widest text-slate-500 uppercase"
+          class="hidden sm:block text-sm tracking-wider text-slate-500 uppercase truncate"
         >
           {{ props.title }}
         </span>
       </div>
 
-      <div class="flex items-center gap-2 text-sm text-slate-500">
-        <Icon name="pixelarticons:user" class="w-4 h-4 font-slate-500" />
-        <div>
-          <span class="hidden sm:inline mr-1">Logged in as</span>
-          <span class="font-bold">{{
+      <div class="flex text-slate-500 gap-x-3 min-w-0 text-sm uppercase">
+        <div class="flex items-center gap-2 min-w-0">
+          <Icon name="pixelarticons:moon-star" class="text-pink-500" />
+          <span class="truncate">
+            {{ user.resonance ?? "--" }}
+            resonance
+          </span>
+        </div>
+
+        <div
+          class="hidden min-[400px]:flex items-center gap-2 px-1.5 py-0.5 min-w-0 ring-2 ring-slate-300 bg-slate-200"
+        >
+          <Icon name="pixelarticons:user" class="text-slate-700" />
+          <span class="font-bold normal-case truncate">{{
             user.data?.user_metadata?.display_name ?? "Guest"
           }}</span>
         </div>
@@ -36,62 +45,58 @@
     </main>
 
     <footer
-      class="shrink-0 flex flex-wrap justify-between items-center p-4 text-slate-500 border-4 border-double border-card-border ring-4 ring-card-ring ring-inset bg-card shadow-transparent-lg"
+      class="shrink-0 flex items-center gap-4 p-4 text-slate-500 border-4 border-double border-card-border ring-4 ring-card-ring ring-inset bg-card shadow-transparent-lg"
     >
       <div
-        class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm uppercase"
+        class="flex-1 min-w-0 grid grid-cols-[auto_auto] min-[570px]:flex min-[570px]:items-center gap-x-3 gap-y-1.5 text-sm uppercase"
       >
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 min-w-0">
           <Icon
             name="pixelarticons:briefcase-account"
-            class="w-4 h-4 text-red-500"
+            class="text-red-500 shrink-0"
           />
-          <span>
+          <span class="truncate">
             {{ user.cards?.length ?? "--" }}
-            <span class="hidden sm:inline">
-              {{ user.cards?.length === 1 ? " card" : " cards" }}
-            </span>
+            {{ user.cards?.length === 1 ? " card" : " cards" }}
           </span>
         </div>
 
-        <div class="flex items-center gap-2">
-          <Icon name="pixelarticons:gamepad" class="w-4 h-4 text-indigo-500" />
-          <span>
+        <div class="flex items-center gap-2 min-w-0">
+          <Icon name="pixelarticons:gamepad" class="text-indigo-500 shrink-0" />
+          <span class="truncate">
             {{ user.games ?? "--" }}
-            <span class="hidden sm:inline">{{
-              user.games === 1 ? "game" : "games"
-            }}</span>
+            {{ user.games === 1 ? "game" : "games" }}
           </span>
         </div>
 
-        <div class="flex items-center gap-2">
-          <Icon name="pixelarticons:trophy" class="w-4 h-4 text-emerald-500" />
-          <span>
+        <div class="flex items-center gap-2 min-w-0">
+          <Icon name="pixelarticons:trophy" class="text-emerald-500 shrink-0" />
+          <span class="truncate">
             {{ user.wins ?? "--" }}
-            <span class="hidden sm:inline">
-              {{ user.wins === 1 ? "win" : "wins" }}
-              ({{
-                user.games != null
-                  ? user.games === 0
-                    ? "0"
-                    : (((user.wins ?? 0) / user.games) * 100).toFixed(1)
-                  : "--"
-              }}%)
-            </span>
+            {{ user.wins === 1 ? "win" : "wins" }}
+            ({{
+              user.games != null
+                ? user.games === 0
+                  ? "0"
+                  : (((user.wins ?? 0) / user.games) * 100).toFixed(1)
+                : "--"
+            }}%)
           </span>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 min-w-0">
           <Icon
             name="pixelarticons:cellular-signal-0"
-            class="w-4 h-4 text-sky-500"
+            class="text-sky-500 shrink-0"
           />
-          {{ user.rank ?? "--" }}
+          <span class="truncate">
+            {{ user.rank ?? "--" }}
+          </span>
         </div>
       </div>
 
       <button
-        class="flex justify-center items-center p-1 rounded-sm ring-slate-300 transition-all"
+        class="shrink-0 flex justify-center items-center p-1 rounded-sm ring-slate-300 transition-all"
         :class="
           !user.isLoading && user.isOnCooldown
             ? 'cursor-not-allowed opacity-50'
@@ -102,21 +107,12 @@
         <Icon
           v-if="user.isLoading"
           name="lucide:loader-circle"
-          class="w-4 h-4 animate-spin"
+          class="animate-spin"
         />
 
-        <Icon
-          v-else-if="user.isOnCooldown"
-          name="pixelarticons:check"
-          class="w-4 h-4"
-        />
+        <Icon v-else-if="user.isOnCooldown" name="pixelarticons:check" />
 
-        <Icon
-          v-else
-          title="Force-reload stats"
-          name="pixelarticons:reload"
-          class="w-4 h-4"
-        />
+        <Icon v-else title="Force-reload stats" name="pixelarticons:reload" />
       </button>
     </footer>
   </div>

@@ -207,29 +207,14 @@ COMMENT ON TABLE "public"."user_cards" IS 'Table of user-owned cards.';
 
 
 
-COMMENT ON COLUMN "public"."user_cards"."id" IS 'The user card entry ID.';
-
-
-
-COMMENT ON COLUMN "public"."user_cards"."uid" IS 'The ID of the user owning the card.';
-
-
-
-COMMENT ON COLUMN "public"."user_cards"."card_id" IS 'The ID of the card.';
-
-
-
-COMMENT ON COLUMN "public"."user_cards"."obtained_at" IS 'The date and time at which the user obtained the card.';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."user_stats" (
     "uid" "uuid" DEFAULT "auth"."uid"() NOT NULL,
     "battle_card" "uuid",
     "onboarded" boolean DEFAULT false NOT NULL,
     "draft" integer,
     "games" integer DEFAULT 0 NOT NULL,
-    "wins" integer DEFAULT 0 NOT NULL
+    "wins" integer DEFAULT 0 NOT NULL,
+    "resonance" bigint DEFAULT '0'::bigint NOT NULL
 );
 
 
