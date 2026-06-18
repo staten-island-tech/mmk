@@ -13,9 +13,11 @@
       {{ props.cooldownRemaining }}
     </div>
 
-    <div class="flex justify-between items-center w-full gap-2 font-semibold">
-      <span>{{ props.move.move.name }}</span>
-      <span class="text-sm font-alt">
+    <div
+      class="overflow-hidden flex justify-between items-center w-full gap-2 font-semibold"
+    >
+      <span class="truncate">{{ props.move.move.name }}</span>
+      <span class="text-sm font-alt shrink-0">
         {{ isFree ? "Free" : props.move.move.cost + " energy" }}
       </span>
     </div>
@@ -30,6 +32,7 @@
           props.move.move.enemyCustomDialogue
         "
         name="pixelarticons:comment"
+        class="inline shrink-0"
       />
     </div>
   </button>
