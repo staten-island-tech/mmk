@@ -141,7 +141,7 @@
         >
           <!-- Ground -->
           <div
-            class="z-20 absolute bottom-0 left-1/2 w-[300%] h-32 md:h-96 origin-bottom transition-colors duration-1000"
+            class="hidden md:block z-20 absolute bottom-0 left-1/2 w-[300%] h-96 origin-bottom transition-colors duration-1000"
             :class="{ 'bg-slate-200': !activeDomain }"
             :style="{
               backgroundColor: activeDomain
