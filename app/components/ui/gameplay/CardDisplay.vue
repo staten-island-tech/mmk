@@ -1,5 +1,5 @@
 <template>
-  <UiCardSimple class="!gap-0 !p-0 w-full !md:w-96 md:h-96 !ring-0">
+  <UiCardSimple class="!gap-0 !p-0 w-full md:w-96 md:h-96 !ring-0">
     <!-- Player label -->
     <div
       class="hidden md:flex justify-center items-center gap-5 p-2 border-b-2 text-xl font-semibold tracking-wider"
