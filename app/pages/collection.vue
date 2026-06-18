@@ -9,11 +9,13 @@
       {{ dialogMessage }}
     </UiModalSimple>
 
-    <div class="overflow-hidden flex flex-col gap-4 p-12 h-full min-h-0">
+    <div
+      class="overflow-hidden flex flex-col gap-4 px-4 py-8 sm:p-12 h-full min-h-0"
+    >
       <Transition name="warning" mode="out-in">
         <div
           v-if="(user.cards?.length ?? 0) > 0 && !user.battleCard"
-          class="flex items-start gap-2 p-4 font-sans text-orange-900 border-4 border-double border-card-border bg-orange-100"
+          class="flex items-start gap-2 p-4 font-sans text-orange-900 border-4 border-double border-orange-900 bg-orange-100"
           style="
             background-image:
               linear-gradient(#f2dcc4 1px, transparent 1px),
@@ -22,16 +24,30 @@
           "
         >
           <Icon name="pixelarticons:alert" class="shrink-0 mt-0.5 text-xl" />
-          <span
-            >You have no battle card set. Future matches will use a randomly
+          <div class="lg:hidden overflow-hidden relative flex-1 fade-mask">
+            <div class="whitespace-nowrap animate-marquee">
+              <span class="inline-block pr-1">
+                You have no battle card set. Future matches will use a randomly
+                selected card from your collection. Consider setting one to make
+                sure your strongest card always fights for you.
+              </span>
+              <span class="inline-block pr-1">
+                You have no battle card set. Future matches will use a randomly
+                selected card from your collection. Consider setting one to make
+                sure your strongest card always fights for you.
+              </span>
+            </div>
+          </div>
+          <div class="hidden lg:block">
+            You have no battle card set. Future matches will use a randomly
             selected card from your collection. Consider setting one to make
-            sure your strongest card always fights for you.</span
-          >
+            sure your strongest card always fights for you.
+          </div>
         </div>
       </Transition>
 
       <div
-        class="overflow-hidden flex flex-col flex-1 min-h-0 p-8 border-4 border-double border-card-border bg-slate-200"
+        class="overflow-hidden flex flex-col flex-1 p-4 sm:p-8 min-h-0 border-4 border-double border-card-border bg-slate-200"
         style="
           background-image:
             linear-gradient(#cbd5e1 1px, transparent 1px),
@@ -67,14 +83,16 @@
 
         <template v-else>
           <div class="flex-1 flex flex-col items-center gap-6 w-full min-h-0">
-            <UiFormInputSimple
-              v-model="cardSearch"
-              placeholder="Search for a card..."
-              class="w-1/2 font-sans"
-            />
+            <div class="flex justify-center w-full lg:w-3/4">
+              <UiFormInputSimple
+                v-model="cardSearch"
+                placeholder="Search for a card..."
+                class="w-full font-sans"
+              />
+            </div>
 
             <div class="flex-1 w-full min-h-0">
-              <div class="h-full overflow-y-auto p-6">
+              <div class="h-full overflow-y-auto p-2 sm:p-6">
                 <div class="flex flex-wrap justify-center gap-12 w-full">
                   <UiCardSimple
                     v-for="card in filteredCards"
@@ -144,7 +162,10 @@
                         >
                           <span class="flex items-center gap-2 text-red-600">
                             <Icon name="pixelarticons:heart" />
-                            <span>{{ card.health }} HP</span>
+                            <span>
+                              {{ card.health }}
+                              <span class="hidden sm:inline">HP</span>
+                            </span>
                           </span>
 
                           <span
@@ -156,7 +177,10 @@
 
                           <span class="flex items-center gap-2 text-blue-600">
                             <Icon name="pixelarticons:shield" />
-                            <span>{{ card.defense }} DEF</span>
+                            <span>
+                              {{ card.defense }}
+                              <span class="hidden sm:inline">DEF</span>
+                            </span>
                           </span>
                         </div>
                       </div>
@@ -288,6 +312,30 @@ onMounted(() => {
   animation: dots 1s infinite;
 }
 
+.animate-marquee {
+  display: inline-flex;
+  width: max-content;
+  animation: marquee 20s linear infinite;
+}
+
+.fade-mask {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 5%,
+    black 95%,
+    transparent
+  );
+
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 5%,
+    black 95%,
+    transparent
+  );
+}
+
 @keyframes float {
   0% {
     @apply text-blue-300;
@@ -329,6 +377,15 @@ onMounted(() => {
 
   100% {
     content: "";
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
   }
 }
 </style>
