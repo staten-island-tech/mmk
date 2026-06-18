@@ -21,7 +21,7 @@
       <div
         v-if="step >= 0"
         :key="step"
-        class="z-10 flex flex-col justify-center items-center text-center gap-6"
+        class="z-10 overflow-y-auto flex flex-col justify-center items-center text-center gap-6"
       >
         <template v-if="step === 0">
           <h1>
@@ -49,12 +49,12 @@
               class="flex flex-col items-center gap-8"
               style="perspective: 750px"
             >
-              <div class="relative w-72 h-96 transition-all duration-300">
+              <div class="relative w-[70vw] md:w-80 h-96 transition-all duration-300">
                 <div
                   class="absolute inset-0 transition-all duration-1000"
                   :class="{ 'blur-md brightness-50': !revealed }"
                 >
-                  <UiCardSimple class="flex flex-col w-full h-full">
+                  <UiCardSimple class="flex flex-col h-full">
                     <!-- Sprite -->
                     <div
                       class="shrink-0 flex justify-center items-center p-4 w-full h-2/5 bg-slate-300"
@@ -115,8 +115,8 @@
           </div>
           <UiButtonSimplePrimary
             label="Continue"
-            class="!w-72"
-            @click="advanceStep!()"
+            class="!w-[70vw] md:!w-80"
+            @click="advanceStep?.()"
           />
         </template>
 
@@ -243,6 +243,6 @@ onMounted(async () => {
 }
 
 h1 {
-  @apply text-4xl text-blue-200 tracking-wider;
+  @apply text-2xl md:text-3xl text-blue-200 tracking-wider;
 }
 </style>

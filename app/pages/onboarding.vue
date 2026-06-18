@@ -6,6 +6,7 @@
         filter: `brightness(${backgroundBrightness})`,
       }"
     />
+
     <Transition name="slide-fade" mode="out-in">
       <div
         v-if="step >= 0"
@@ -27,14 +28,14 @@
           <h1>First, let's draw a starter card.</h1>
           <div class="flex gap-8 mt-4">
             <div
-              v-for="n in 3"
+              v-for="n in cardCount"
               :key="n"
               class="cursor-pointer flex flex-col items-center gap-8"
               style="perspective: 750px"
               @click="flipCard(n)"
             >
               <div
-                class="relative w-72 h-96 transition-all duration-300"
+                class="relative w-[70vw] md:w-72 h-80 transition-all duration-300"
                 :class="{
                   'hover:[transform:rotateX(10deg)_rotateY(-20deg)_scale(0.95)]':
                     flippedCard === null,
@@ -146,6 +147,8 @@
 </template>
 
 <script setup lang="ts">
+import { useMediaQuery } from "@vueuse/core";
+
 definePageMeta({
   middleware: "onboarding",
 });
@@ -160,6 +163,9 @@ const card = ref<Card | null>(null);
 const flippedCard = ref<number | null>(null);
 const confirmedCard = ref<number | null>(null);
 const revealed = ref(false);
+
+const isMobile = useMediaQuery("(max-width: 768px)");
+const cardCount = computed(() => (isMobile.value ? 1 : 3));
 
 const advanceStep = ref<(() => void) | null>(null);
 
@@ -240,6 +246,6 @@ onMounted(async () => {
 }
 
 h1 {
-  @apply text-4xl text-blue-200 tracking-wider;
+  @apply text-2xl md:text-3xl text-blue-200 tracking-wider;
 }
 </style>

@@ -16,7 +16,7 @@
         class="flex w-full min-h-[100dvh] sm:items-center justify-center sm:p-10"
       >
         <UiCardSimple
-          class="w-full h-[100dvh] sm:h-auto max-w-full sm:max-w-lg p-10 gap-5"
+          class="overflow-y-auto w-full h-[100dvh] sm:h-auto max-w-full sm:max-w-lg p-10 gap-5"
         >
           <h2 class="text-xl font-medium text-slate-500">
             Create a new account
