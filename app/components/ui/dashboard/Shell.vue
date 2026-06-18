@@ -30,7 +30,7 @@
         </div>
 
         <div
-          class="hidden min-[400px]:flex items-center gap-2 px-1.5 py-0.5 min-w-0 ring-2 ring-slate-300 bg-slate-200"
+          class="hidden min-[300px]:flex items-center gap-2 px-1.5 py-0.5 min-w-0 ring-2 ring-slate-300 bg-slate-200"
         >
           <Icon name="pixelarticons:user" class="text-slate-700" />
           <span class="font-bold normal-case truncate">{{
