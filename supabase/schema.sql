@@ -152,55 +152,19 @@ CREATE TABLE IF NOT EXISTS "public"."matches" (
     "player1_uid" "uuid" NOT NULL,
     "player2_uid" "uuid" NOT NULL,
     "current_turn" "uuid",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "winner" "uuid",
-    "game_state" "jsonb",
     "status" "text" DEFAULT 'waiting'::"text" NOT NULL,
+    "game_state" "jsonb",
     "player1_card_id" bigint NOT NULL,
     "player2_card_id" bigint NOT NULL,
+    "winner" "uuid",
     "rewarded" boolean DEFAULT false NOT NULL,
     "player1_finalized" boolean DEFAULT false NOT NULL,
-    "player2_finalized" boolean DEFAULT false NOT NULL
+    "player2_finalized" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
 
 
 ALTER TABLE "public"."matches" OWNER TO "supabase_admin";
-
-
-COMMENT ON TABLE "public"."matches" IS 'List of matches between users.';
-
-
-
-COMMENT ON COLUMN "public"."matches"."winner" IS 'The player who won the match.';
-
-
-
-COMMENT ON COLUMN "public"."matches"."game_state" IS 'The state of the game.';
-
-
-
-COMMENT ON COLUMN "public"."matches"."status" IS 'The status of the match.';
-
-
-
-COMMENT ON COLUMN "public"."matches"."player1_card_id" IS 'The ID of Player 1''s battle card.';
-
-
-
-COMMENT ON COLUMN "public"."matches"."player2_card_id" IS 'The ID of Player 2''s battle card.';
-
-
-
-COMMENT ON COLUMN "public"."matches"."rewarded" IS 'Whether or not the winner has been rewarded.';
-
-
-
-COMMENT ON COLUMN "public"."matches"."player1_finalized" IS 'Whether or not Player 1 completed the finalization.';
-
-
-
-COMMENT ON COLUMN "public"."matches"."player2_finalized" IS 'Whether or not Player 2 completed the finalization.';
-
 
 
 CREATE TABLE IF NOT EXISTS "public"."matchmaking_heartbeats" (
@@ -218,18 +182,14 @@ COMMENT ON TABLE "public"."matchmaking_heartbeats" IS 'Updates to queue users.';
 
 CREATE TABLE IF NOT EXISTS "public"."matchmaking_queue" (
     "uid" "uuid" DEFAULT "auth"."uid"() NOT NULL,
+    "match_id" "uuid",
     "rank" "text" DEFAULT ''::"text" NOT NULL,
     "status" "text" DEFAULT 'waiting'::"text" NOT NULL,
-    "joined_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "match_id" "uuid"
+    "joined_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
 
 
 ALTER TABLE "public"."matchmaking_queue" OWNER TO "supabase_admin";
-
-
-COMMENT ON TABLE "public"."matchmaking_queue" IS 'The list of users in the matchmaking queue.';
-
 
 
 CREATE TABLE IF NOT EXISTS "public"."user_cards" (
@@ -265,39 +225,15 @@ COMMENT ON COLUMN "public"."user_cards"."obtained_at" IS 'The date and time at w
 
 CREATE TABLE IF NOT EXISTS "public"."user_stats" (
     "uid" "uuid" DEFAULT "auth"."uid"() NOT NULL,
-    "wins" integer DEFAULT 0 NOT NULL,
-    "games" integer DEFAULT 0 NOT NULL,
+    "battle_card" "uuid",
     "onboarded" boolean DEFAULT false NOT NULL,
     "draft" integer,
-    "battle_card" "uuid"
+    "games" integer DEFAULT 0 NOT NULL,
+    "wins" integer DEFAULT 0 NOT NULL
 );
 
 
 ALTER TABLE "public"."user_stats" OWNER TO "supabase_admin";
-
-
-COMMENT ON TABLE "public"."user_stats" IS 'Stats associated with each user account.';
-
-
-
-COMMENT ON COLUMN "public"."user_stats"."wins" IS 'The number of wins the user has.';
-
-
-
-COMMENT ON COLUMN "public"."user_stats"."games" IS 'The number of games the user has played.';
-
-
-
-COMMENT ON COLUMN "public"."user_stats"."onboarded" IS 'Whether or not the user completed the onboarding.';
-
-
-
-COMMENT ON COLUMN "public"."user_stats"."draft" IS 'The ID of the user''s starter card drawn in the onboarding.';
-
-
-
-COMMENT ON COLUMN "public"."user_stats"."battle_card" IS 'The card the user fights with in matches.';
-
 
 
 ALTER TABLE ONLY "public"."battle_heartbeats"
@@ -361,6 +297,11 @@ ALTER TABLE ONLY "public"."matches"
 
 ALTER TABLE ONLY "public"."matchmaking_heartbeats"
     ADD CONSTRAINT "matchmaking_heartbeats_uid_fkey" FOREIGN KEY ("uid") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."matchmaking_queue"
+    ADD CONSTRAINT "matchmaking_queue_match_id_fkey" FOREIGN KEY ("match_id") REFERENCES "public"."matches"("id");
 
 
 
@@ -753,7 +694,7 @@ GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public".
 
 
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."matches" TO "postgres";
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."matches" TO "anon";
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."matches" TO "anon";
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."matches" TO "authenticated";
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."matches" TO "service_role";
 
@@ -767,7 +708,7 @@ GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public".
 
 
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."matchmaking_queue" TO "postgres";
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."matchmaking_queue" TO "anon";
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."matchmaking_queue" TO "anon";
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."matchmaking_queue" TO "authenticated";
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."matchmaking_queue" TO "service_role";
 
@@ -781,7 +722,7 @@ GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public".
 
 
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."user_stats" TO "postgres";
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."user_stats" TO "anon";
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."user_stats" TO "anon";
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."user_stats" TO "authenticated";
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."user_stats" TO "service_role";
 
