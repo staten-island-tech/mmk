@@ -1,7 +1,24 @@
 jobid,schedule,command,nodename,nodeport,database,username,active,jobname
-2,* * * * *,"delete from battle_heartbeats
+1,* * * * *,"delete from matchmaking_heartbeats
 where
   last_heartbeat < now() - interval '15 seconds';
+
+delete from matchmaking_queue
+where
+  uid in (
+    select
+      q.uid
+    from
+      matchmaking_queue q
+      left join matchmaking_heartbeats h on h.uid = q.uid
+    where
+      h.uid is null
+      or h.last_heartbeat < now() - interval '15 seconds'
+  )
+  and status = 'waiting';",localhost,5432,postgres,supabase_admin,true,cleanup-stale-queue
+2,* * * * *,"delete from battle_heartbeats
+where
+  last_heartbeat < now() - interval '30 seconds';
 
 update matches m
 set
@@ -28,7 +45,7 @@ where
         battle_heartbeats h
       where
         h.uid = m.player1_uid
-        and h.last_heartbeat >= now() - interval '15 seconds'
+        and h.last_heartbeat >= now() - interval '30 seconds'
     )
     or not exists (
       select
@@ -37,29 +54,38 @@ where
         battle_heartbeats h
       where
         h.uid = m.player2_uid
-        and h.last_heartbeat >= now() - interval '15 seconds'
+        and h.last_heartbeat >= now() - interval '30 seconds'
     )
   );",localhost,5432,postgres,supabase_admin,true,cleanup-stale-battles
-1,* * * * *,"delete from matchmaking_heartbeats
-where
-  last_heartbeat < now() - interval '15 seconds';
-
-delete from matchmaking_queue
-where
-  uid in (
+5,0 0 * * *,"with
+  doomed as (
     select
-      q.uid
+      id
     from
-      matchmaking_queue q
-      left join matchmaking_heartbeats h on h.uid = q.uid
+      public.matches
     where
-      h.uid is null
-      or h.last_heartbeat < now() - interval '15 seconds'
+      created_at < now() - interval '3 hours'
+      and not exists (
+        select
+          1
+        from
+          public.battle_heartbeats h
+        where
+          h.uid = player1_uid
+          and h.last_heartbeat > now() - interval '10 minutes'
+      )
+      and not exists (
+        select
+          1
+        from
+          public.battle_heartbeats h
+        where
+          h.uid = player2_uid
+          and h.last_heartbeat > now() - interval '10 minutes'
+      )
+    limit
+      1000
   )
-  and status = 'waiting';",localhost,5432,postgres,supabase_admin,true,cleanup-stale-queue
-5,0 0 * * *,"update public.matches
-set
-  game_state = '{}'
+delete from public.matches m using doomed d
 where
-  status in ('finished', 'abandoned')
-  and created_at < now() - interval '7 days';",localhost,5432,postgres,supabase_admin,true,cleanup-old-battles
+  m.id = d.id;",localhost,5432,postgres,supabase_admin,true,cleanup-old-battles

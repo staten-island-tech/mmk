@@ -21,7 +21,7 @@
       <div
         v-if="step >= 0"
         :key="step"
-        class="z-10 overflow-y-auto flex flex-col justify-center items-center text-center gap-6"
+        class="z-10 overflow-y-auto flex flex-col justify-center items-center text-center gap-4"
       >
         <template v-if="step === 0">
           <h1>
@@ -49,12 +49,23 @@
               class="flex flex-col items-center gap-8"
               style="perspective: 750px"
             >
-              <div class="relative w-[70vw] md:w-80 h-96 transition-all duration-300">
+              <div
+                class="relative w-[70vw] md:w-80 h-96 transition-all duration-300"
+              >
                 <div
                   class="absolute inset-0 transition-all duration-1000"
                   :class="{ 'blur-md brightness-50': !revealed }"
                 >
-                  <UiCardSimple class="flex flex-col h-full">
+                  <UiCardSimple class="relative flex flex-col h-full">
+                    <!-- Resonance -->
+                    <div
+                      v-if="isDuplicate && resonance != null"
+                      class="absolute flex items-center gap-2 top-2 right-2 text-blue-600 text-lg tracking-wide"
+                    >
+                      <span>+{{ resonance }}</span>
+                      <Icon name="pixelarticons:moon-star" />
+                    </div>
+
                     <!-- Sprite -->
                     <div
                       class="shrink-0 flex justify-center items-center p-4 w-full h-2/5 bg-slate-300"
@@ -155,6 +166,7 @@ const step = ref<number>(-1);
 const card = ref<Card | null>(null);
 const revealed = ref<boolean>(false);
 const isDuplicate = ref<boolean>(false);
+const resonance = ref<number | null>(null);
 
 const advanceStep = ref<(() => void) | null>(null);
 
@@ -187,6 +199,7 @@ onMounted(async () => {
       duplicateCard?: boolean;
       card?: Card;
       alreadyRewarded?: boolean;
+      resonance?: number;
     }>("/api/battle/reward", {
       method: "POST",
       body: { matchId },
@@ -195,8 +208,9 @@ onMounted(async () => {
     if (result.alreadyRewarded) throw Error("Already rewarded for this match.");
     if (result.success && result.card) card.value = result.card;
     if (result.duplicateCard) isDuplicate.value = true;
+    if (result.resonance) resonance.value = result.resonance;
 
-    await user.fetchStats(true); // force refresh
+    await user.fetchStats(true); // force-refresh
 
     for (const [i, { duration, callback, onDemand }] of steps.entries()) {
       step.value = i;

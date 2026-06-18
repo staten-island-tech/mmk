@@ -5,16 +5,18 @@ declare global {
   interface UserStats {
     /** The user ID. */
     readonly uid: string;
-    /** The number of wins the user has. */
-    readonly wins: number;
-    /** The number of games the user has played. */
-    readonly games: number;
+    /** The card the user fights with in matches. */
+    readonly battle_card?: string;
     /** Whether or not the user completed the onboarding. */
     readonly onboarded: boolean;
     /** The ID of the user's starter card drawn in the onboarding. */
     readonly draft: number;
-    /** The card the user fights with in matches. */
-    readonly battle_card?: string;
+    /** The number of wins the user has. */
+    readonly wins: number;
+    /** The number of games the user has played. */
+    readonly games: number;
+    /** The amount of resonance the user has. */
+    readonly resonance: number;
   }
 
   /** User card schema. */

@@ -5,14 +5,16 @@ export const useUserStore = defineStore("user", () => {
   const supabase = useSupabaseClient<Database>();
   const data = useSupabaseUser();
 
+  /** The card the user fights with in matches. (uuid) */
+  const battleCard = ref<string | null>(null);
   /** The number of wins the user has. (int32) */
   const wins = ref<number | null>(null);
   /** The number of games the user has played. (int32) */
   const games = ref<number | null>(null);
   /** The array of card IDs the user owns. (int32[]) */
   const cards = ref<UserCard[] | null>(null);
-  /** The card the user fights with in matches. (uuid) */
-  const battleCard = ref<string | null>(null);
+  /** The amount of resonance the user has. (int32) */
+  const resonance = ref<number | null>(null);
 
   const isLoading = ref<boolean>(false);
   const isOnCooldown = ref<boolean>(false);
@@ -45,10 +47,11 @@ export const useUserStore = defineStore("user", () => {
       const cached = localStorage.getItem(STORAGE_KEY);
       if (cached) {
         const parsed: {
+          battleCard: string;
           wins: number;
           games: number;
           cards: UserCard[];
-          battleCard: string;
+          resonance: number;
           timestamp: number;
         } = JSON.parse(cached);
         if (Date.now() - parsed.timestamp < CACHE_TTL) {
@@ -56,6 +59,7 @@ export const useUserStore = defineStore("user", () => {
           games.value = parsed.games;
           cards.value = parsed.cards;
           battleCard.value = parsed.battleCard;
+          resonance.value = parsed.resonance;
         } else localStorage.removeItem(STORAGE_KEY); // expired cache
       }
     } catch {
@@ -84,7 +88,7 @@ export const useUserStore = defineStore("user", () => {
 
   /** Retrieve user stats. */
   async function fetchStats(forceRefresh = false) {
-    if (isLoading.value || isOnCooldown.value) return;
+    if (!forceRefresh && (isLoading.value || isOnCooldown.value)) return;
     if (!forceRefresh && cards.value !== null) return;
 
     try {
@@ -95,6 +99,7 @@ export const useUserStore = defineStore("user", () => {
       wins.value = stats.wins;
       games.value = stats.games;
       battleCard.value = stats.battle_card;
+      resonance.value = stats.resonance;
 
       // Map each card ID to its reference ID and obtain date
       const cardsMap = new Map(
@@ -153,9 +158,10 @@ export const useUserStore = defineStore("user", () => {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          cards: cards.value,
           wins: wins.value,
           games: games.value,
+          cards: cards.value,
+          resonance: resonance.value,
           timestamp: Date.now(),
         }),
       );
@@ -164,10 +170,11 @@ export const useUserStore = defineStore("user", () => {
   return {
     supabase,
     data,
-    cards,
+    battleCard,
     wins,
     games,
-    battleCard,
+    cards,
+    resonance,
     rank,
     isLoading,
     isOnCooldown,
