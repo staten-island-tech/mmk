@@ -1,11 +1,11 @@
 <template>
-  <div class="w-screen h-screen p-8">
+  <div class="w-full h-[100dvh] p-8">
     <ContentRenderer
       v-if="data"
       :value="data"
       class="prose prose-neutral max-w-none font-system"
     />
-    <div v-else class="flex justify-center items-center w-screen h-screen">
+    <div v-else class="flex justify-center items-center w-full h-[100dvh]">
       <Icon name="lucide:loader-circle" class="w-8 h-8 animate-spin" />
     </div>
   </div>

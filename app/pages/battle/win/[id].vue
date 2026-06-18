@@ -1,5 +1,5 @@
 <template>
-  <div class="flex justify-center items-center p-8 w-screen h-screen">
+  <div class="flex justify-center items-center p-8 w-full h-[100dvh]">
     <UiBackgroundDomain
       class="transition-all duration-1000"
       :style="{
