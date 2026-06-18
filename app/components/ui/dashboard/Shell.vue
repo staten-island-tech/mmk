@@ -23,7 +23,7 @@
       <div class="flex items-center gap-2 text-sm text-slate-500">
         <Icon name="pixelarticons:user" class="w-4 h-4 font-slate-500" />
         <div>
-          Logged in as
+          <span class="hidden sm:inline mr-1">Logged in as</span>
           <span class="font-bold">{{
             user.data?.user_metadata?.display_name ?? "Guest"
           }}</span>
