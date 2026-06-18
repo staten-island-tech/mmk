@@ -47,4 +47,3 @@ export default defineNuxtConfig({
     pageTransition: { name: "default", mode: "out-in" },
   },
 });
-

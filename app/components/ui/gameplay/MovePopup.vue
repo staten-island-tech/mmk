@@ -1,6 +1,6 @@
 <template>
   <div
-    class="pointer-events-none z-40 absolute inset-x-0 bottom-[30%] flex justify-center items-end"
+    class="pointer-events-none z-40 absolute inset-x-0 bottom-[37.5%] md:bottom-[30%] flex justify-center items-end"
   >
     <TransitionGroup
       name="popup"

@@ -39,7 +39,7 @@
             class="z-40 absolute inset-0 flex flex-col justify-center items-center bg-black/80 backdrop-grayscale"
           >
             <div
-              class="flex flex-col items-center gap-6 p-12 w-full border-y-8 border-double"
+              class="flex flex-col items-center text-center gap-6 p-12 w-full border-y-8 border-double"
               :class="
                 multiplayer.myPlayerNumber.value === winner
                   ? 'border-primary-border text-primary-foreground bg-primary-foreground/15'
@@ -122,7 +122,7 @@
 
         <!-- Battlefield -->
         <div
-          class="z-20 overflow-hidden relative grid h-3/4 grid-cols-2 grid-rows-2 p-12"
+          class="z-20 overflow-hidden relative grid h-2/3 md:h-3/4 grid-cols-1 md:grid-cols-2 grid-rows-2 md:p-12"
           :class="{
             'bg-slate-100': !activeDomain,
             'h-full': battleState === 'finished',
@@ -141,10 +141,8 @@
         >
           <!-- Ground -->
           <div
-            class="z-20 absolute bottom-0 left-1/2 w-[300%] h-96 origin-bottom transition-colors duration-1000"
-            :class="{
-              'bg-slate-200': !activeDomain,
-            }"
+            class="z-20 absolute bottom-0 left-1/2 w-[300%] h-32 md:h-96 origin-bottom transition-colors duration-1000"
+            :class="{ 'bg-slate-200': !activeDomain }"
             :style="{
               backgroundColor: activeDomain
                 ? domainComponent?.THEME_GROUND
@@ -161,8 +159,39 @@
             }"
           />
 
+          <!-- Tab bar for mobile players -->
+          <div
+            class="overflow-hidden z-40 md:hidden flex absolute top-4 left-1/2 w-[calc(100%-2rem)] font-semibold border-2 border-slate-400 bg-slate-200 -translate-x-1/2"
+          >
+            <button
+              class="flex-1 px-4 py-2 min-w-0 truncate transition-colors duration-150"
+              :class="
+                activeCardTab === 1
+                  ? 'bg-slate-400 text-slate-200'
+                  : 'text-slate-500 hover:bg-slate-300'
+              "
+              @click="activeCardTab = 1"
+            >
+              {{ p1Username }}
+            </button>
+            <button
+              class="flex-1 px-4 py-2 min-w-0 truncate transition-colors duration-150"
+              :class="
+                activeCardTab === 2
+                  ? 'bg-slate-400 text-slate-200'
+                  : 'text-slate-500 hover:bg-slate-300'
+              "
+              @click="activeCardTab = 2"
+            >
+              {{ p2Username }}
+            </button>
+          </div>
+
           <!-- Player 2 card -->
-          <div class="flex items-start justify-start p-5 z-10">
+          <div
+            class="flex items-start justify-center md:justify-start mt-16 md:m-0 p-4 z-10"
+            :class="{ 'hidden md:flex': activeCardTab !== 2 }"
+          >
             <UiGameplayCardDisplay
               :card="p2Card"
               :state="p2State"
@@ -173,7 +202,10 @@
           </div>
 
           <!-- Player 1 card -->
-          <div class="flex items-start justify-end p-5 z-10">
+          <div
+            class="flex items-start justify-center md:justify-end mt-16 md:m-0 p-4 z-10"
+            :class="{ 'hidden md:flex': activeCardTab !== 1 }"
+          >
             <UiGameplayCardDisplay
               :card="p1Card"
               :state="p1State"
@@ -186,7 +218,7 @@
 
           <!-- Player 2 sprite -->
           <div
-            class="z-30 flex items-end justify-start pl-32"
+            class="z-30 hidden md:flex items-end justify-start pl-32"
             :class="{
               'sprite-active':
                 currentPlayer === 2 && battleState === 'player_turn',
@@ -208,7 +240,7 @@
 
           <!-- Player 1 sprite -->
           <div
-            class="z-30 flex items-end justify-end pr-32"
+            class="z-30 hidden md:flex items-end justify-end pr-32"
             :class="{
               'sprite-active':
                 currentPlayer === 1 && battleState === 'player_turn',
@@ -217,7 +249,7 @@
             <div class="relative flex flex-col-reverse items-center">
               <img
                 :src="p1Card.defaultSprite"
-                class="w-48 h-48 object-contain scale-x-[-1] transition-all duration-300"
+                class="w-48 h-48 object-contain transition-all duration-300"
                 :style="{
                   filter:
                     battle.healthTint(p1State.hp, p1State.maxHp) +
@@ -233,7 +265,7 @@
         <Transition name="panel">
           <UiCardSimple
             v-if="battleState !== 'finished'"
-            class="z-20 relative p-8 w-full h-1/4 !max-w-full"
+            class="z-20 relative p-6 md:p-8 w-full h-1/3 md:h-1/4 !max-w-full"
             :class="{
               'cursor-not-allowed brightness-75':
                 battleState === 'player_turn' && multiplayer.isRemoteTurn.value,
@@ -288,9 +320,9 @@
             <!-- Move selection -->
             <div
               v-else-if="battleState === 'player_turn'"
-              class="flex items-center gap-16 h-full"
+              class="flex flex-col md:flex-row items-center gap-4 md:gap-16 h-full"
             >
-              <div>
+              <div class="flex md:flex-col gap-2 md:gap-1">
                 <p class="text-md tracking-widest font-alt uppercase">
                   What will
                 </p>
@@ -311,7 +343,9 @@
               <div
                 class="overflow-y-auto flex-1 flex items-start pr-2 w-full h-full"
               >
-                <div class="grid grid-cols-3 auto-rows-fr gap-4 w-full">
+                <div
+                  class="grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-4 w-full"
+                >
                   <UiGameplayMoveButton
                     v-for="move in currentMoves"
                     :key="move.id"
@@ -394,6 +428,8 @@ function showMatchError(message: string) {
   dialogOpen.value = true;
 }
 
+const activeCardTab = ref<1 | 2>(1);
+
 const p1Username = ref<string>("Player 1");
 const p2Username = ref<string>("Player 2");
 
@@ -407,6 +443,8 @@ const winner = ref<1 | 2 | null>(null);
 const activeDomain = ref<ActiveDomain | null>(null);
 const domainJustActivated = ref<boolean>(false);
 const effectsMessage = ref<string>("");
+
+watch(currentPlayer, (val) => (activeCardTab.value = val));
 
 const dialogueQueue = ref<DialogueLine[]>([]);
 const currentDialogue = ref<DialogueLine | null>(null);

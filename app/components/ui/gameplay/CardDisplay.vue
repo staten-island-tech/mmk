@@ -1,38 +1,35 @@
 <template>
-  <UiCardSimple class="!gap-0 !p-0 !w-96 h-96 !ring-0">
+  <UiCardSimple class="!gap-0 !p-0 w-full !md:w-96 md:h-96 !ring-0">
     <!-- Player label -->
     <div
-      class="flex justify-center items-center gap-5 p-2 border-b-2 text-xl font-semibold tracking-wider"
+      class="hidden md:flex justify-center items-center gap-5 p-2 border-b-2 text-xl font-semibold tracking-wider"
       :class="
         accent === 1
           ? 'text-game-p1-accent border-game-p1-light bg-game-p1-light/10'
           : 'text-game-p2-accent border-game-p2-light bg-game-p2-light/10'
       "
     >
-      {{ props.playerLabel }}
+      <span class="truncate">{{ props.playerLabel }}</span>
     </div>
+
     <!-- Details -->
     <div
-      class="flex items-center gap-3 p-5 border-b-2 border-slate-400 bg-slate-200"
-      :class="flip ? 'flex-row-reverse' : ''"
+      class="flex items-center gap-3 p-4 border-b-2 border-slate-400 bg-slate-200"
+      :class="flip ? 'md:flex-row-reverse' : ''"
     >
       <div
         class="overflow-hidden shrink-0 p-2 w-20 h-20 border-4 border-double border-slate-400 bg-slate-300"
       >
-        <img
-          :src="card.defaultSprite"
-          class="w-full h-full object-contain"
-          :class="flip ? 'scale-x-[-1]' : ''"
-        />
+        <img :src="card.defaultSprite" class="w-full h-full object-contain" />
       </div>
-      <div :class="flip ? 'text-right' : 'text-left'">
-        <p class="text-lg tracking-wide leading-tight font-bold">
+      <div class="overflow-hidden min-w-0" :class="flip ? 'md:text-right' : ''">
+        <p class="text-lg tracking-wide leading-tight truncate font-bold">
           {{ card.name }}
         </p>
-        <p class="text-sm italic">
+        <p class="text-sm truncate italic">
           {{ card.nickname }}
         </p>
-        <p class="text-sm uppercase">{{ card.rarity.name }}</p>
+        <p class="hidden md:block text-sm uppercase">{{ card.rarity.name }}</p>
       </div>
     </div>
     <div class="flex flex-col gap-3 m-1 p-2 h-full ring-4 ring-card-ring">
