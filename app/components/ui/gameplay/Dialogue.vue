@@ -1,6 +1,7 @@
 <template>
   <div
     class="flex flex-col gap-5 w-full h-full min-h-0"
+    :class="{ 'cursor-pointer': props.canContinue !== false }"
     @click="handleBoxClick"
   >
     <div class="flex flex-col gap-2 h-full min-h-0">
@@ -18,12 +19,12 @@
       </div>
 
       <div class="flex justify-end items-center gap-1 w-full text-slate-400">
-        <template v-if="displayText === sourceText">
-          <span>Click to continue</span>
+        <template v-if="displayText !== sourceText">
+          <span>Click to fast-forward</span>
           <Icon name="pixelarticons:arrow-right" />
         </template>
-        <template v-else>
-          <span>Click to fast-forward</span>
+        <template v-else-if="props.canContinue">
+          <span>Click to continue</span>
           <Icon name="pixelarticons:arrow-right" />
         </template>
       </div>
@@ -36,6 +37,7 @@ const props = defineProps<{
   speaker?: string;
   dialogueText?: string;
   typingSpeedCps: number;
+  canContinue?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -52,8 +54,10 @@ let lastClickTime = 0;
 const slotText = computed(() => {
   const content = slots.default?.();
   if (!content || content.length === 0) return "";
+
   const first = content[0];
   if (!first || typeof first.children !== "string") return "";
+
   return first.children;
 });
 
@@ -135,4 +139,3 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped></style>
-

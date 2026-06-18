@@ -247,6 +247,9 @@
                 :speaker="currentDialogue.speaker"
                 :dialogue-text="currentDialogue.text"
                 :typing-speed-cps="50"
+                :can-continue="
+                  currentPlayer === multiplayer.myPlayerNumber.value
+                "
                 @finished="onDialogueFinished"
               />
             </div>
@@ -259,6 +262,9 @@
                 speaker="Battle Log"
                 :dialogue-text="effectsMessage"
                 :typing-speed-cps="60"
+                :can-continue="
+                  currentPlayer === multiplayer.myPlayerNumber.value
+                "
                 @finished="onEffectsFinished"
               />
             </div>
@@ -272,6 +278,9 @@
                 "
                 :dialogue-text="preventedMessage"
                 :typing-speed-cps="70"
+                :can-continue="
+                  currentPlayer !== multiplayer.myPlayerNumber.value
+                "
                 @finished="onPreventedFinished"
               />
             </div>
@@ -572,8 +581,10 @@ function advanceDialogue() {
 }
 
 function onDialogueFinished() {
+  // only the player who started it can advance it
+  if (currentPlayer.value !== multiplayer.myPlayerNumber.value) return;
+
   if (dialogueQueue.value.length > 0 || afterDialogueCallback)
-    // only the player who started it can advance it
     advanceDialogue();
 }
 
