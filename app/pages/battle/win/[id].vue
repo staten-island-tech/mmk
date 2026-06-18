@@ -1,5 +1,5 @@
 <template>
-  <div class="flex justify-center items-center p-4 w-screen h-screen">
+  <div class="flex justify-center items-center p-8 w-screen h-screen">
     <UiBackgroundDomain
       class="transition-all duration-1000"
       :style="{
@@ -113,6 +113,11 @@
               </div>
             </div>
           </div>
+          <UiButtonSimplePrimary
+            label="Continue"
+            class="!w-72"
+            @click="advanceStep!()"
+          />
         </template>
 
         <template v-else-if="step === 3">
@@ -151,14 +156,17 @@ const card = ref<Card | null>(null);
 const revealed = ref<boolean>(false);
 const isDuplicate = ref<boolean>(false);
 
+const advanceStep = ref<(() => void) | null>(null);
+
 const steps: {
   duration?: number;
+  onDemand?: boolean;
   callback?: () => any | Promise<any>;
 }[] = [
   { duration: 3000, callback: () => (backgroundBrightness.value = 0.6) },
   { duration: 4000 },
   {
-    duration: 10000,
+    onDemand: true,
     callback: async () => {
       revealed.value = false;
       backgroundBrightness.value = 0.4;
@@ -190,10 +198,13 @@ onMounted(async () => {
 
     await user.fetchStats(true); // force refresh
 
-    for (const [i, { duration, callback }] of steps.entries()) {
+    for (const [i, { duration, callback, onDemand }] of steps.entries()) {
       step.value = i;
       if (callback) await callback();
-      await new Promise((resolve) => setTimeout(resolve, duration));
+      if (onDemand) {
+        await new Promise<void>((resolve) => (advanceStep.value = resolve));
+        advanceStep.value = null;
+      } else await new Promise((resolve) => setTimeout(resolve, duration));
     }
 
     navigateTo("/");
@@ -203,7 +214,7 @@ onMounted(async () => {
       e?.data?.statusMessage || e?.message || "Something went wrong.";
     dialogButtons.value = [
       {
-        label: "Return",
+        label: "Return Home",
         priority: 1,
         callback: () => navigateTo("/"),
       },

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex justify-center items-center p-4 w-screen h-screen">
+  <div class="flex justify-center items-center p-8 w-screen h-screen">
     <UiBackgroundDomain
       class="transition-all duration-1000"
       :style="{
@@ -125,7 +125,7 @@
 
               <UiButtonSimplePrimary
                 label="Accept"
-                class="w-full transition-all duration-300"
+                class="w-full transition-all duration-150"
                 :class="
                   flippedCard === n && confirmedCard !== n && revealed
                     ? 'opacity-100 blur-none'
