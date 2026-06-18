@@ -1,6 +1,6 @@
 <template>
   <div
-    class="overflow-hidden flex flex-col p-4 w-screen h-screen font-alt bg-zinc-300"
+    class="overflow-hidden flex flex-col p-4 w-full h-[100dvh] font-alt bg-zinc-300"
   >
     <header
       class="flex items-center justify-between gap-4 px-6 py-4 border-4 border-double border-card-border ring-4 ring-card-ring ring-inset bg-card shadow-transparent-lg"

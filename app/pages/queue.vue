@@ -1,5 +1,5 @@
 <template>
-  <div class="flex justify-center items-center p-4 w-screen h-screen">
+  <div class="flex justify-center items-center p-4 w-full h-[100dvh]">
     <UiBackgroundDomain class="-z-10 brightness-75" />
 
     <div>

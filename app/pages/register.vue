@@ -13,10 +13,10 @@
       </UiModalSimple>
 
       <div
-        class="flex w-full min-h-screen sm:items-center justify-center sm:p-10"
+        class="flex w-full min-h-[100dvh] sm:items-center justify-center sm:p-10"
       >
         <UiCardSimple
-          class="w-full h-screen sm:h-auto max-w-full sm:max-w-lg p-10 gap-5"
+          class="w-full h-[100dvh] sm:h-auto max-w-full sm:max-w-lg p-10 gap-5"
         >
           <h2 class="text-xl font-medium text-slate-500">
             Create a new account
@@ -59,7 +59,7 @@
               :disabled="isSubmitting"
             />
 
-            <div class="flex justify-between">
+            <div class="flex flex-col md:flex-row justify-between">
               <UiFormPageLink to="/login"
                 >Have an account? Sign in</UiFormPageLink
               >

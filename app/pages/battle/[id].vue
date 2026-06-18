@@ -1,5 +1,5 @@
 <template>
-  <div class="select-none relative flex flex-col w-full h-screen">
+  <div class="select-none relative flex flex-col w-full h-[100dvh]">
     <UiModalSimple
       :open="dialogOpen"
       :title="dialogTitle"
