@@ -122,10 +122,11 @@
 
         <!-- Battlefield -->
         <div
-          class="z-20 overflow-hidden relative grid h-2/3 md:h-3/4 grid-cols-1 md:grid-cols-2 grid-rows-2 md:p-12"
+          class="z-20 overflow-hidden relative grid grid-cols-1 md:grid-cols-2 grid-rows-2 md:p-12"
           :class="{
             'bg-slate-100': !activeDomain,
             'h-full': battleState === 'finished',
+            'h-2/3 md:h-3/4': battleState !== 'finished',
           }"
           :style="{
             backgroundColor: activeDomain
@@ -218,7 +219,7 @@
 
           <!-- Player 2 sprite -->
           <div
-            class="z-30 hidden md:flex items-end justify-start pl-32"
+            class="z-30 hidden [@media(max-height:768px)]:hidden md:flex items-end justify-start pl-32"
             :class="{
               'sprite-active':
                 currentPlayer === 2 && battleState === 'player_turn',
@@ -240,7 +241,7 @@
 
           <!-- Player 1 sprite -->
           <div
-            class="z-30 hidden md:flex items-end justify-end pr-32"
+            class="z-30 hidden [@media(max-height:768px)]:hidden md:flex items-end justify-end pr-32"
             :class="{
               'sprite-active':
                 currentPlayer === 1 && battleState === 'player_turn',
