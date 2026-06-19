@@ -33,6 +33,7 @@
           class="pointer-events-none z-50 absolute inset-0"
         />
 
+        <!-- End screen -->
         <Transition name="win">
           <div
             v-if="battleState === 'finished'"
@@ -41,24 +42,33 @@
             <div
               class="flex flex-col items-center text-center gap-6 p-12 w-full border-y-8 border-double"
               :class="
-                multiplayer.myPlayerNumber.value === winner
-                  ? 'border-primary-border text-primary-foreground bg-primary-foreground/15'
-                  : 'border-accent-border text-accent-foreground bg-accent-foreground/15'
+                winner === null
+                  ? 'border-amber-500 text-amber-500 bg-amber-500/15'
+                  : multiplayer.myPlayerNumber.value === winner
+                    ? 'border-primary-border text-primary-foreground bg-primary-foreground/15'
+                    : 'border-accent-border text-accent-foreground bg-accent-foreground/15'
               "
             >
               <p class="text-2xl tracking-wide uppercase">
-                {{
-                  multiplayer.myPlayerNumber.value === winner
-                    ? "We have a victory!"
-                    : "You've been defeated by..."
-                }}
+                <span v-if="winner">
+                  {{
+                    multiplayer.myPlayerNumber.value === winner
+                      ? "We have a victory!"
+                      : "You've been defeated by"
+                  }}
+                </span>
+                <span v-else>No one claimed the trophy!</span>
               </p>
 
               <h1 class="text-5xl tracking-widest font-display uppercase">
-                {{ winner === 1 ? p1Username : p2Username }}
+                <span v-if="winner"
+                  >{{ winner === 1 ? p1Username : p2Username }}
+                </span>
+                <span v-else>Match Abandoned</span>
               </h1>
 
               <img
+                v-if="winner"
                 :src="
                   winner === 1 ? p1Card.defaultSprite : p2Card.defaultSprite
                 "
@@ -66,7 +76,13 @@
               />
 
               <p class="text-xl tracking-wide">
-                {{ winner === 1 ? p1Username : p2Username }} {{ winMessage }}.
+                <span v-if="winner">
+                  {{ winner === 1 ? p1Username : p2Username }}
+                  {{ winMessage }}.
+                </span>
+                <span v-else
+                  >Someone disconnected before the match could finish.</span
+                >
               </p>
 
               <div class="flex gap-5">
@@ -82,9 +98,11 @@
                   <button
                     class="mt-4 px-8 py-2 min-w-36 text-lg tracking-wider border-4 border-double transition-all duration-150 hover:text-white active:scale-95"
                     :class="
-                      multiplayer.myPlayerNumber.value === winner
-                        ? 'border-primary-border hover:bg-primary-hover'
-                        : 'border-accent-border hover:bg-accent-hover'
+                      winner === null
+                        ? 'border-amber-500 hover:bg-amber-500'
+                        : multiplayer.myPlayerNumber.value === winner
+                          ? 'border-primary-border hover:bg-primary-hover'
+                          : 'border-accent-border hover:bg-accent-hover'
                     "
                     @click="navigateTo('/')"
                   >
@@ -94,9 +112,11 @@
                   <button
                     class="mt-4 px-4 py-2 min-w-36 text-lg tracking-wider border-4 border-double transition-all duration-150 hover:text-white active:scale-95"
                     :class="
-                      multiplayer.myPlayerNumber.value === winner
-                        ? 'border-primary-border hover:bg-primary-hover'
-                        : 'border-accent-border hover:bg-accent-hover'
+                      winner === null
+                        ? 'border-amber-500 hover:bg-amber-500'
+                        : multiplayer.myPlayerNumber.value === winner
+                          ? 'border-primary-border hover:bg-primary-hover'
+                          : 'border-accent-border hover:bg-accent-hover'
                     "
                     @click="navigateTo('/queue')"
                   >
@@ -778,17 +798,17 @@ onMounted(async () => {
       );
     }
 
-    /* If Player 1 disconnects, Player 2 wins, and Player 1 refreshes, the page won't realize the match was abandoned.
-     * The first check here just makes sure the match was actually abandoned.
-     */
     if (matchData.status === "abandoned") {
+      // make sure it was actually abandoned
       battleState.value = "finished";
       winner.value =
-        matchData.winner === userId
-          ? multiplayer.myPlayerNumber.value
-          : multiplayer.myPlayerNumber.value === 1
-            ? 2
-            : 1;
+        matchData.winner === null
+          ? null
+          : matchData.winner === userId
+            ? multiplayer.myPlayerNumber.value
+            : multiplayer.myPlayerNumber.value === 1
+              ? 2
+              : 1;
     } else if (
       matchData.game_state &&
       (matchData.game_state as any).initialized
@@ -838,8 +858,6 @@ onMounted(async () => {
       });
       audioRef.value = audio;
     }
-
-    window.addEventListener("beforeunload", handleUnload);
   } catch (e) {
     console.error(e);
   }
@@ -850,8 +868,6 @@ onBeforeUnmount(() => {
   audioRef.value = null;
 
   multiplayer.cleanup();
-
-  window.removeEventListener("beforeunload", handleUnload);
 });
 </script>
 

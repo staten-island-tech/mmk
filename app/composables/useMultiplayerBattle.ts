@@ -158,7 +158,7 @@ export function useMultiplayerBattle(
 
       if (now - lastPing > 30000) {
         // assume they disconnected
-        console.warn("Opponent disconnected. Claiming victory.");
+        console.warn("Opponent disconnected. No one wins.");
 
         if (watchInterval) clearInterval(watchInterval);
 
@@ -166,12 +166,12 @@ export function useMultiplayerBattle(
           .from("matches")
           .update({
             status: "abandoned",
-            winner: user.value!.sub,
+            winner: null,
           })
           .eq("id", matchId);
 
         engineRefs.battleState.value = "finished";
-        engineRefs.winner.value = myPlayerNumber.value;
+        engineRefs.winner.value = null;
       }
     }
   }
@@ -205,11 +205,13 @@ export function useMultiplayerBattle(
         if (engineRefs.battleState.value !== "finished") {
           engineRefs.battleState.value = "finished";
           engineRefs.winner.value =
-            dbMatch.winner === user.value?.sub
-              ? myPlayerNumber.value
-              : myPlayerNumber.value === 1
-                ? 2
-                : 1;
+            dbMatch.winner === null
+              ? null
+              : dbMatch.winner === user.value?.sub
+                ? myPlayerNumber.value
+                : myPlayerNumber.value === 1
+                  ? 2
+                  : 1;
         }
         return;
       }
@@ -340,9 +342,10 @@ export function useMultiplayerBattle(
             if (payload.new.status === "abandoned") {
               engineRefs.battleState.value = "finished";
 
-              if (payload.new.winner === user.value?.sub)
-                engineRefs.winner.value = myPlayerNumber.value; // current player won
-              else engineRefs.winner.value = myPlayerNumber.value === 1 ? 2 : 1; // current player lost
+              if (payload.new.winner === null) engineRefs.winner.value = null;
+              else if (payload.new.winner === user.value?.sub)
+                engineRefs.winner.value = myPlayerNumber.value;
+              else engineRefs.winner.value = myPlayerNumber.value === 1 ? 2 : 1;
 
               return;
             }
