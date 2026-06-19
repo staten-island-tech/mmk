@@ -7,7 +7,7 @@ export default defineNuxtConfig({
     "@nuxtjs/supabase",
     "@pinia/nuxt",
     "@nuxt/icon",
-    "@nuxt/content",
+    "@comark/nuxt",
   ],
   css: [
     "@fontsource/pixelify-sans/400.css",
